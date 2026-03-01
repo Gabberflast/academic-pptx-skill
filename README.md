@@ -1,57 +1,61 @@
-# Academic Presentations Skill for Claude
+# Academic Presentations Skill for Gemini CLI
 
-A Claude Skill for creating high-quality academic presentations: conference talks, seminar slides, thesis defenses, and grant briefings.
+A Gemini skill for creating high-quality academic presentations: conference talks, seminar slides, thesis defenses, and grant briefings.
 
-## What It Does
+## Quick Install
 
-This skill overrides Claude's default design-forward presentation style and replaces it with communication-first standards appropriate for academic and analytical contexts. When active, Claude will:
+To install this skill for Gemini CLI:
 
-- Write every slide title as a **complete sentence stating the takeaway** ("action title"), not a topic label
-- Structure the deck as a **logical argument** (situation → complication → resolution), not a collection of independent slides
-- Apply the **ghost deck test**: the action titles alone, read in sequence, should tell the full story
-- Place **one exhibit per results slide** and annotate the key finding directly on the chart
-- Apply **citation standards**: in-text citations on every borrowed figure, a References slide at the end
-- End on a **Conclusions slide** that stays on screen during Q&A — never on "Thank You" or a blank
-- Apply minimal, communication-first design: white backgrounds, single sans-serif font, three colours maximum, no decorative icons
+```bash
+gemini skills install https://github.com/Andrei-WongE/academic-pptx-skill
+```
 
-## Installation
+## Features
 
-1. Download this repository as a zip file (click **Code → Download ZIP** above)
-2. In [claude.ai](https://claude.ai), go to **Customize → Skills**
-3. Upload the zip file
-4. Confirm the skill appears in your skills list and is toggled on
+This skill overrides default design-forward presentation styles and replaces them with communication-first standards appropriate for academic and analytical contexts:
 
-> **Requirement:** Code execution and file creation must be enabled in **Settings → Capabilities**.
+- **Action Titles**: Every slide title is a complete sentence stating the takeaway.
+- **Logical Argument**: Deck structure follows a proven narrative spine (Situation → Complication → Resolution).
+- **Ghost Deck Test**: The argument must hold together when reading only the slide titles.
+- **Exhibit Discipline**: One exhibit per results slide with "so what" annotations.
+- **Academic Citations**: In-slide citations and a full References slide at the end.
+- **Strategic Conclusions**: The deck ends on a Conclusions slide that stays visible during Q&A.
+
+## Platform Compatibility
+
+This repository is optimized for dual-platform use:
+
+### Gemini CLI (Recommended)
+Follow the installation command above. The `gemini/SKILL.md` and `gemini/references/` folder provide immediate, native compatibility with Gemini CLI's skill system.
+
+### Claude Code
+The original structure is preserved in the `claude/` directory (flat structure with `SKILL.md` and supporting files) for users who prefer the legacy layout.
 
 ## Usage
 
-Just ask naturally:
+Once installed, the skill is automatically discovered. You can trigger it naturally:
 
 - *"Make slides for my conference paper on X"*
 - *"Build a deck for my thesis defense"*
 - *"Create a seminar presentation about my research on Y"*
 
-Claude will detect the academic context, load this skill automatically, and apply all guidelines before generating any slides. You do not need to give any special instructions.
+Gemini will detect the academic context, load this skill, and apply all guidelines.
 
-This skill works alongside Anthropic's built-in PPTX skill, which handles the technical file generation. This skill handles content, argument structure, and design standards.
-
-## File Structure
+## Development & Structure
 
 ```
 academic-pptx-skill/
-├── SKILL.md                  # Entry point: routing logic and design standards
-├── content_guidelines.md     # Argument structure, action titles, citations, deck architecture
-├── slide_patterns.md         # Per-slide-type implementation patterns with PptxGenJS code
-└── README.md                 # This file
+├── README.md
+├── gemini/
+│   ├── SKILL.md             # Core methodology + metadata
+│   └── references/          # Supporting guidelines and patterns
+│       ├── content_guidelines.md
+│       └── slide_patterns.md
+└── claude/                  # Original Claude Code version (flat)
+    ├── SKILL.md
+    ├── content_guidelines.md
+    └── slide_patterns.md
 ```
-
-## Background
-
-The guidelines in this skill draw on:
-- Barbara Minto's *Pyramid Principle* (structured argument, action titles)
-- Naegle (2021), "Ten simple rules for effective presentation slides," *PLOS Computational Biology*
-- Standard consulting and academic presentation practice (McKinsey, conference norms)
-- Community feedback on Claude's default presentation behaviour in professional contexts
 
 ## License
 
