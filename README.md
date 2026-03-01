@@ -26,10 +26,10 @@ This skill overrides default design-forward presentation styles and replaces the
 This repository is optimized for dual-platform use:
 
 ### Gemini CLI (Recommended)
-Follow the installation command above. The `SKILL.md` at the root and `references/` folder provide immediate, native compatibility with Gemini CLI's skill system.
+Follow the installation command above. The `gemini/SKILL.md` and `gemini/references/` folder provide immediate, native compatibility with Gemini CLI's skill system.
 
 ### Claude Code
-The original structure is preserved in the `claude/` directory for users who prefer the legacy layout or are using tools compatible with that specific format.
+The original structure is preserved in the `claude/` directory (flat structure with `SKILL.md` and supporting files) for users who prefer the legacy layout.
 
 ## Usage
 
@@ -45,12 +45,16 @@ Gemini will detect the academic context, load this skill, and apply all guidelin
 
 ```
 academic-pptx-skill/
-├── SKILL.md             # Gemini CLI entry point
-├── references/          # Supporting guidelines and patterns
-│   ├── content_guidelines.md
-│   └── slide_patterns.md
-├── claude/              # Original Claude Code version
-└── README.md
+├── README.md
+├── gemini/
+│   ├── SKILL.md             # Core methodology + metadata
+│   └── references/          # Supporting guidelines and patterns
+│       ├── content_guidelines.md
+│       └── slide_patterns.md
+└── claude/                  # Original Claude Code version (flat)
+    ├── SKILL.md
+    ├── content_guidelines.md
+    └── slide_patterns.md
 ```
 
 ## License
