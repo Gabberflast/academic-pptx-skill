@@ -11,9 +11,32 @@ license: Proprietary. LICENSE.txt has complete terms
 This skill has two layers:
 
 1. **This file** — governs content, lesson structure, and design standards for ESL classroom presentations. Read it fully before planning any slides.
-2. **PPTX skill** — governs the technical implementation (creating, editing, and QA-ing the .pptx file). Read it too.
+2. **PPTX skill** — governs the technical implementation (QA-ing the .pptx file). Read it for the QA procedure (`markitdown`, slide image review).
 
 **Always read both before writing any code or creating any files.**
+
+---
+
+## Template Requirement
+
+**Every ESL lesson presentation MUST be built on top of `Presentation.pptx`** (included in this skill). This file contains the master slide layouts, theme colours, and fonts that all lessons inherit.
+
+- **Do not create presentations from scratch** with PptxGenJS or a blank `Presentation()`.
+- **Always load the template**: `prs = Presentation('Presentation.pptx')`
+- **Use python-pptx** (Python) for all slide generation. PptxGenJS cannot load templates.
+- **Remove the blank placeholder slide** before adding lesson content.
+
+See [slide_patterns.md](slide_patterns.md) for the complete layout reference and implementation patterns.
+
+### Template Summary
+
+| Property | Value |
+|----------|-------|
+| Dimensions | 13.33" × 7.50" (standard 16:9) |
+| Heading font | Aptos Display (theme major) |
+| Body font | Aptos (theme minor) |
+| Theme | Office — navy dk2 `0E2841`, teal accent1 `156082` |
+| Layouts | 11 master layouts (see slide_patterns.md §Template) |
 
 ---
 
@@ -23,8 +46,7 @@ This skill has two layers:
 |------|-------|
 | Lesson structure, slide sequence, text/exercise rules, text enhancement conventions | [content_guidelines.md](content_guidelines.md) |
 | Per-slide-type patterns (title, vocabulary, grammar, exercises, etc.) | [slide_patterns.md](slide_patterns.md) |
-| Technical creation from scratch | PPTX skill → `pptxgenjs.md` |
-| Technical editing of an existing file | PPTX skill → `editing.md` |
+| QA procedure (markitdown, slide images) | PPTX skill → `editing.md` |
 
 ---
 
@@ -100,7 +122,7 @@ Target sizes, optimised for a 75" TV viewed from the back of a classroom:
 | Exercise content | 24–28 pt | Regular |
 | Labels / attribution | 14–16 pt | Regular, muted color |
 
-Single font face (Arial, Calibri, or Helvetica — confirm with user). Use size and weight for hierarchy — never multiple typefaces.
+Single font family from the template theme: **Aptos Display** for titles, **Aptos** for body. These are inherited automatically from `Presentation.pptx`. Use size and weight for hierarchy — never multiple typefaces.
 
 ### Color
 
@@ -172,8 +194,7 @@ ESL Classroom QA Checklist:
 
 ## Dependencies
 
-Same as PPTX skill:
-- `pip install "markitdown[pptx]"` — text extraction
-- `npm install -g pptxgenjs` — creating from scratch
-- LibreOffice (`soffice`) — PDF conversion
-- Poppler (`pdftoppm`) — PDF to images
+- `pip install python-pptx` — creating and editing .pptx files (loads `Presentation.pptx` template)
+- `pip install "markitdown[pptx]"` — text extraction for QA
+- LibreOffice (`soffice`) — PDF conversion (for QA via slide images)
+- Poppler (`pdftoppm`) — PDF to images (for QA via slide images)

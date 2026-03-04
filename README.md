@@ -37,15 +37,16 @@ Just ask naturally:
 
 Claude will detect the ESL classroom context, load this skill automatically, and apply all guidelines before generating any slides. You do not need to give any special instructions.
 
-This skill works alongside Anthropic's built-in PPTX skill, which handles the technical file generation. This skill handles content, lesson structure, and design standards.
+All presentations are built on top of `Presentation.pptx`, which provides the master slide layouts, theme colours (Office), and fonts (Aptos). Claude uses **python-pptx** to generate slides from this template.
 
 ## File Structure
 
 ```
 esl-classroom-pptx-skill/
+├── Presentation.pptx         # Base template — master layouts, theme, fonts (REQUIRED)
 ├── SKILL.md                  # Entry point: routing logic, design standards, QA checklist
 ├── content_guidelines.md     # Lesson structure, slide sequence, text enhancement conventions
-├── slide_patterns.md         # Per-slide-type implementation patterns with PptxGenJS code
+├── slide_patterns.md         # Per-slide-type implementation patterns with python-pptx code
 └── README.md                 # This file
 ```
 

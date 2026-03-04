@@ -1,359 +1,448 @@
 # Slide Patterns for ESL Classroom Presentations
 
-Implementation patterns for each slide type. Use with `pptxgenjs.md` for the technical API.
+Implementation patterns for each slide type using **python-pptx** with the **Presentation.pptx** template.
 
-All coordinates assume `LAYOUT_16x9` (10" × 5.625"). Adjust proportionally for other layouts.
+All coordinates are for the template's standard 16:9 dimensions: **13.33" × 7.50"**.
+
+---
+
+## Template Reference (Presentation.pptx)
+
+### Layout Index
+
+| Index | Layout Name | Placeholders | Use For |
+|-------|------------|-------------|---------|
+| 0 | Title Slide | Center title + subtitle | Lesson title slide |
+| 1 | Title and Content | Title + content area | Most content slides, exercises, warm-up, discussion |
+| 2 | Section Header | Large title + body text | Section dividers between lesson phases |
+| 3 | Two Content | Title + two columns | Matching exercises, grouped vocabulary |
+| 4 | Comparison | Title + 2 headers + 2 content areas | Grammar comparison tables |
+| 5 | Title Only | Title only, body area open | Complex custom layouts (grammar rules, exercises with word banks) |
+| 6 | Blank | No placeholders | Fully custom slides (review/wrap-up with dark bg, breadcrumb) |
+| 8 | Picture with Caption | Title left + picture right + text left | Single-focus vocabulary |
+
+### Key Placeholder Positions
+
+```
+Layout 1 "Title and Content":
+  Title:   (0.92", 0.40") → 11.50" × 1.45"
+  Content: (0.92", 2.00") → 11.50" × 4.76"
+
+Layout 3 "Two Content":
+  Title:        (0.92", 0.40") → 11.50" × 1.45"
+  Left column:  (0.92", 2.00") → 5.67" × 4.76"
+  Right column: (6.75", 2.00") → 5.67" × 4.76"
+
+Layout 5 "Title Only":
+  Title: (0.92", 0.40") → 11.50" × 1.45"
+  Body:  open canvas from y=2.00" downward
+```
 
 ---
 
 ## Global Defaults
 
-Apply these to every slide in an ESL classroom deck.
+```python
+from pptx import Presentation
+from pptx.util import Inches, Pt, Emu
+from pptx.dml.color import RGBColor
+from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
+from pptx.enum.shapes import MSO_SHAPE
 
-**IMPORTANT: Font sizes are TARGETS, not hard limits.** The overriding rule is that all content must fit on the slide without overflowing. Reduce sizes if needed to prevent overflow; split to additional slides if content would become too small to read. The teacher's content always takes priority.
+# ── Colours ─────────────────────────────────────────────
+COLORS = {
+    "primary":   RGBColor(0x0E, 0x28, 0x41),  # Dark navy (theme dk2)
+    "accent":    RGBColor(0x15, 0x60, 0x82),  # Teal-blue (theme accent1)
+    "accent2":   RGBColor(0xE9, 0x71, 0x32),  # Orange (theme accent2)
+    "green":     RGBColor(0x19, 0x6B, 0x24),  # Green (theme accent3)
+    "body":      RGBColor(0x2D, 0x2D, 0x2D),  # Near-black — body text
+    "muted":     RGBColor(0x77, 0x77, 0x77),  # Gray — attribution, labels
+    "white":     RGBColor(0xFF, 0xFF, 0xFF),
+    "rule":      RGBColor(0xCC, 0xCC, 0xCC),  # Light gray — divider lines
+    "highlight": RGBColor(0xFF, 0xF2, 0xCC),  # Yellow — word bank boxes
+    "callout":   RGBColor(0xEB, 0xF3, 0xFA),  # Light blue — rule/objective boxes
+}
 
-```javascript
-const COLORS = {
-  bg:        "FFFFFF",   // White background
-  primary:   "1F4E79",   // Dark navy — titles
-  accent:    "2E75B6",   // Mid-blue — headers, highlights
-  body:      "2D2D2D",   // Near-black — body text
-  muted:     "777777",   // Gray — attribution, labels
-  rule:      "CCCCCC",   // Light gray — divider lines
-  highlight: "FFF2CC",   // Yellow — callout boxes (use sparingly)
-  callout:   "EBF3FA",   // Light blue — rule boxes, objective boxes
-};
+# Grammar colour coding — default scheme, overridable per lesson
+GRAMMAR = {
+    "verb":        RGBColor(0xC0, 0x39, 0x2B),  # Red
+    "noun":        RGBColor(0x2E, 0x75, 0xB6),  # Blue
+    "adjective":   RGBColor(0x27, 0xAE, 0x60),  # Green
+    "adverb":      RGBColor(0x8E, 0x44, 0xAD),  # Purple
+    "preposition": RGBColor(0xE6, 0x7E, 0x22),  # Orange
+}
 
-// Grammar colour coding — default scheme, overridable per lesson
-// Apply when teaching parts of speech or highlighting target structures
-const GRAMMAR = {
-  verb:        "C0392B",  // Red
-  noun:        "2E75B6",  // Blue
-  adjective:   "27AE60",  // Green
-  adverb:      "8E44AD",  // Purple
-  preposition: "E67E22",  // Orange
-};
+# ── Fonts (from template theme) ─────────────────────────
+FONT_TITLE = "Aptos Display"   # Theme major font (headings)
+FONT_BODY  = "Aptos"           # Theme minor font (body text)
 
-const FONTS = {
-  face: "Arial",         // Single typeface throughout
-  title: 32,             // Slide title: 32 pt target
-  sectionHeader: 26,     // Within-slide section headers
-  body: 24,              // Body text, instructions: 24 pt target
-  vocab: 36,             // Key vocabulary words: prominent
-  exercise: 24,          // Exercise content: 24 pt target
-  label: 16,             // Labels, attribution
-  instruction: 24,       // Written instructions on exercise slides
-};
+# Target sizes (NOT hard limits — content must fit, shrink if needed)
+SIZE_TITLE       = Pt(32)
+SIZE_SECTION     = Pt(26)
+SIZE_BODY        = Pt(24)
+SIZE_VOCAB       = Pt(36)
+SIZE_EXERCISE    = Pt(24)
+SIZE_INSTRUCTION = Pt(22)
+SIZE_LABEL       = Pt(16)
 
-const MARGIN = 0.5;      // Minimum margin from slide edge (inches)
+# ── Layout constants ────────────────────────────────────
+MARGIN    = Inches(0.92)
+CONTENT_Y = Inches(2.0)    # Where body content starts (below title)
+CONTENT_W = Inches(11.50)  # Full content width
+CONTENT_H = Inches(4.76)   # Content area height
+SLIDE_W   = Inches(13.33)
+SLIDE_H   = Inches(7.50)
+
+
+# ── Helper functions ────────────────────────────────────
+
+def load_template(template_path="Presentation.pptx"):
+    """Load template and remove the blank placeholder slide."""
+    prs = Presentation(template_path)
+    # Remove the existing blank slide(s)
+    ns = '{http://schemas.openxmlformats.org/officeDocument/2006/relationships}'
+    while len(prs.slides._sldIdLst):
+        rId = prs.slides._sldIdLst[0].get(f'{ns}id')
+        if rId:
+            prs.part.drop_rel(rId)
+        del prs.slides._sldIdLst[0]
+    return prs
+
+
+def add_run(paragraph, text, size=None, font=None, bold=False,
+            italic=False, color=None, underline=False):
+    """Add a formatted run to a paragraph."""
+    run = paragraph.add_run()
+    run.text = text
+    if size:      run.font.size = size
+    if font:      run.font.name = font
+    if bold:      run.font.bold = True
+    if italic:    run.font.italic = True
+    if color:     run.font.color.rgb = color
+    if underline: run.font.underline = True
+    return run
+
+
+def set_paragraph(paragraph, text, size=None, font=None, bold=False,
+                  italic=False, color=None, alignment=None, space_after=None):
+    """Configure a paragraph with uniform formatting."""
+    paragraph.text = text
+    paragraph.alignment = alignment
+    if space_after is not None:
+        paragraph.space_after = Pt(space_after)
+    for run in paragraph.runs:
+        if size:   run.font.size = size
+        if font:   run.font.name = font
+        if bold:   run.font.bold = bold
+        if italic: run.font.italic = italic
+        if color:  run.font.color.rgb = color
+
+
+def add_textbox(slide, left, top, width, height, text="",
+                size=SIZE_BODY, font=FONT_BODY, bold=False, italic=False,
+                color=COLORS["body"], alignment=PP_ALIGN.LEFT,
+                valign=MSO_ANCHOR.TOP, word_wrap=True):
+    """Add a text box with consistent defaults."""
+    txBox = slide.shapes.add_textbox(left, top, width, height)
+    tf = txBox.text_frame
+    tf.word_wrap = word_wrap
+    p = tf.paragraphs[0]
+    p.text = text
+    p.alignment = alignment
+    for run in p.runs:
+        run.font.size = size
+        run.font.name = font
+        run.font.bold = bold
+        run.font.italic = italic
+        run.font.color.rgb = color
+    return txBox
+
+
+def add_rounded_rect(slide, left, top, width, height,
+                     fill_color=COLORS["callout"],
+                     border_color=COLORS["accent"], border_pt=1.5):
+    """Add a rounded rectangle (callout/highlight box)."""
+    shape = slide.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height
+    )
+    shape.fill.solid()
+    shape.fill.fore_color.rgb = fill_color
+    ln = shape.line
+    ln.color.rgb = border_color
+    ln.width = Pt(border_pt)
+    return shape
+
+
+def set_slide_bg(slide, color):
+    """Set solid background colour on a slide."""
+    bg = slide.background
+    fill = bg.fill
+    fill.solid()
+    fill.fore_color.rgb = color
 ```
+
+**IMPORTANT: Font sizes above are TARGETS.** The overriding rule is that all content must fit on the slide without overflowing. Reduce sizes if needed; split to additional slides if content would become too small to read. The teacher's content always takes priority.
 
 ---
 
 ## 1. Title Slide
 
 **Purpose:** Establish the lesson; tell students what today's class is about.
+**Layout:** 0 — "Title Slide"
 
-```javascript
-// Dark background — one of the few places for it
-slide.background = { color: COLORS.primary };
+```python
+slide = prs.slides.add_slide(prs.slide_layouts[0])
 
-// Lesson topic — large and clear
-slide.addText("Past Simple — Regular Verbs", {
-  x: 0.7, y: 1.2, w: 8.6, h: 1.4,
-  fontSize: 38, fontFace: FONTS.face, color: "FFFFFF",
-  bold: true, align: "left", valign: "top"
-});
+# Title (placeholder 0 — centred)
+title = slide.placeholders[0]
+title.text = "Prepositions of Time: IN, ON, AT"
+for run in title.text_frame.paragraphs[0].runs:
+    run.font.size = Pt(40)
+    run.font.bold = True
 
-// Learning objective preview
-slide.addText("Today: talk about what you did last weekend using past simple verbs", {
-  x: 0.7, y: 2.7, w: 8.6, h: 0.6,
-  fontSize: 20, fontFace: FONTS.face, color: "A0BBDD",
-  align: "left"
-});
+# Subtitle (placeholder 1) — objective + class info
+subtitle = slide.placeholders[1]
+tf = subtitle.text_frame
+p = tf.paragraphs[0]
+p.text = "Today: use IN, ON, and AT to talk about when things happen"
+p.alignment = PP_ALIGN.CENTER
+for run in p.runs:
+    run.font.size = Pt(22)
 
-// Thin accent rule
-slide.addShape(pres.shapes.RECTANGLE, {
-  x: 0.7, y: 3.5, w: 2.0, h: 0.04,
-  fill: { color: COLORS.accent }, line: { color: COLORS.accent }
-});
-
-// Date and class info
-slide.addText("Monday, 3 March 2026  ·  Period 3  ·  Class 9B", {
-  x: 0.7, y: 3.65, w: 8.6, h: 0.5,
-  fontSize: 16, fontFace: FONTS.face, color: "CADCFC",
-  align: "left"
-});
+p2 = tf.add_paragraph()
+p2.text = "Wednesday, 4 March 2026  ·  S.1  ·  Period 3"
+p2.alignment = PP_ALIGN.CENTER
+for run in p2.runs:
+    run.font.size = Pt(16)
+    run.font.color.rgb = COLORS["muted"]
 ```
-
-**Do not include:** Decorative images, animated elements, institution crests unless requested.
 
 ---
 
 ## 2. Learning Objective Slide
 
 **Purpose:** "Today we will..." — give students a clear, measurable target.
+**Layout:** 5 — "Title Only" (custom body with callout box)
 
-```javascript
-// Title
-slide.addText("Today's Objective", {
-  x: MARGIN, y: 0.2, w: 9.0, h: 0.7,
-  fontSize: FONTS.title, fontFace: FONTS.face, color: COLORS.primary, bold: true
-});
+```python
+slide = prs.slides.add_slide(prs.slide_layouts[5])
 
-// Divider
-slide.addShape(pres.shapes.RECTANGLE, {
-  x: MARGIN, y: 0.9, w: 9.0, h: 0.025, fill: { color: COLORS.rule }
-});
+# Title (placeholder 0)
+slide.placeholders[0].text = "Today's Objective"
 
-// Main objective in a callout box
-slide.addShape(pres.shapes.ROUNDED_RECTANGLE, {
-  x: 1.0, y: 1.2, w: 8.0, h: 1.4,
-  fill: { color: COLORS.callout }, line: { color: COLORS.accent, pt: 1.5 }, rectRadius: 0.1
-});
+# Callout box with main objective
+box = add_rounded_rect(slide,
+    Inches(1.5), Inches(2.2), Inches(10.3), Inches(1.4),
+    fill_color=COLORS["callout"], border_color=COLORS["accent"])
 
-slide.addText("Today we will use the past simple tense to talk and write about things we did in the past.", {
-  x: 1.2, y: 1.35, w: 7.6, h: 1.1,
-  fontSize: FONTS.body, fontFace: FONTS.face, color: COLORS.primary,
-  bold: true, align: "center", valign: "middle"
-});
+txBox = add_textbox(slide,
+    Inches(1.8), Inches(2.35), Inches(9.7), Inches(1.1),
+    text="Today we will use IN, ON, and AT to talk and write about when things happen.",
+    size=SIZE_BODY, font=FONT_BODY, bold=True,
+    color=COLORS["primary"], alignment=PP_ALIGN.CENTER)
 
-// Sub-objectives
-slide.addText([
-  { text: "By the end of this lesson, you can:", options: { bold: true, breakLine: true } },
-  { text: "Form regular past simple verbs (add -ed)", options: { breakLine: true } },
-  { text: "Use past simple in sentences about last weekend", options: { breakLine: true } },
-  { text: "Ask and answer questions using 'Did you...?'", options: { breakLine: true } },
-], {
-  x: 1.0, y: 2.9, w: 8.0, h: 2.2,
-  fontSize: FONTS.body, fontFace: FONTS.face, color: COLORS.body,
-  bullet: true, paraSpaceAfter: 10
-});
+# Sub-objectives
+txBox2 = slide.shapes.add_textbox(Inches(1.5), Inches(4.0), Inches(10.3), Inches(2.5))
+tf = txBox2.text_frame
+tf.word_wrap = True
+
+objectives = [
+    "By the end of this lesson, you can:",
+    "• Use IN with months, years, and seasons",
+    "• Use ON with days and dates",
+    "• Use AT with exact times",
+    "• Choose the correct preposition in sentences",
+]
+for i, obj in enumerate(objectives):
+    p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+    p.text = obj
+    p.space_after = Pt(8)
+    for run in p.runs:
+        run.font.size = SIZE_BODY
+        run.font.name = FONT_BODY
+        run.font.color.rgb = COLORS["body"]
+        if i == 0:
+            run.font.bold = True
 ```
 
 ---
 
 ## 3. Warm-Up / Do Now Slide
 
-**Purpose:** Quick opener to get students thinking in English. Connects to today's lesson.
+**Purpose:** Quick opener to get students thinking in English. Connects to today's topic.
+**Layout:** 1 — "Title and Content"
 
-```javascript
-// Title
-slide.addText("Warm-Up: What Did You Do Yesterday?", {
-  x: MARGIN, y: 0.2, w: 9.0, h: 0.7,
-  fontSize: FONTS.title, fontFace: FONTS.face, color: COLORS.primary, bold: true
-});
+```python
+slide = prs.slides.add_slide(prs.slide_layouts[1])
 
-// Divider
-slide.addShape(pres.shapes.RECTANGLE, {
-  x: MARGIN, y: 0.9, w: 9.0, h: 0.025, fill: { color: COLORS.rule }
-});
+# Title
+slide.placeholders[0].text = "Warm-Up: When Is It?"
 
-// Prompt — large and engaging
-slide.addText("Tell your partner THREE things you did yesterday.", {
-  x: MARGIN, y: 1.2, w: 9.0, h: 0.8,
-  fontSize: 28, fontFace: FONTS.face, color: COLORS.body,
-  bold: true, align: "center"
-});
+# Content — use the content placeholder
+tf = slide.placeholders[1].text_frame
+tf.word_wrap = True
 
-// Sentence starters to scaffold
-slide.addText("SENTENCE STARTERS", {
-  x: MARGIN, y: 2.3, w: 9.0, h: 0.45,
-  fontSize: 20, fontFace: FONTS.face, color: COLORS.accent, bold: true
-});
+set_paragraph(tf.paragraphs[0],
+    "Answer these questions with your partner:",
+    size=SIZE_BODY, font=FONT_BODY, bold=True,
+    color=COLORS["body"], space_after=16)
 
-slide.addText([
-  { text: "Yesterday, I ____________.", options: { breakLine: true } },
-  { text: "After school, I ____________.", options: { breakLine: true } },
-  { text: "In the evening, I ____________.", options: { breakLine: true } },
-], {
-  x: 1.0, y: 2.8, w: 8.0, h: 2.0,
-  fontSize: FONTS.body, fontFace: FONTS.face, color: COLORS.body,
-  paraSpaceAfter: 12
-});
+questions = [
+    "1. What month is your birthday?",
+    "2. What day is our English class?",
+    "3. What time does school start?",
+]
+for q in questions:
+    p = tf.add_paragraph()
+    set_paragraph(p, q,
+        size=SIZE_BODY, font=FONT_BODY,
+        color=COLORS["body"], space_after=12)
 ```
 
 ---
 
 ## 4. Vocabulary Slide (Single Focus)
 
-**Purpose:** Introduce one word with image, definition, and example. Image left, text right.
+**Purpose:** Introduce one word with image, definition, and example.
+**Layout:** 8 — "Picture with Caption" (title + text left, picture right)
 
-```javascript
-// Title
-slide.addText("Weather Vocabulary", {
-  x: MARGIN, y: 0.2, w: 9.0, h: 0.6,
-  fontSize: FONTS.title, fontFace: FONTS.face, color: COLORS.primary, bold: true
-});
+```python
+slide = prs.slides.add_slide(prs.slide_layouts[8])
 
-// Divider
-slide.addShape(pres.shapes.RECTANGLE, {
-  x: MARGIN, y: 0.8, w: 9.0, h: 0.025, fill: { color: COLORS.rule }
-});
+# Title (placeholder 0, left side)
+slide.placeholders[0].text = "Weather Vocabulary"
 
-// IMAGE — left side (~40% of slide)
-slide.addImage({
-  path: "umbrella.png",
-  x: MARGIN, y: 1.1, w: 3.8, h: 3.8,
-  sizing: { type: "contain" }
-});
+# Picture placeholder (placeholder 1, right side at 5.67", 1.08")
+# Insert image into the picture placeholder
+pic_ph = slide.placeholders[1]
+pic_ph.insert_picture(open("umbrella.png", "rb"))
 
-// WORD — large, prominent
-slide.addText("umbrella", {
-  x: 4.8, y: 1.1, w: 4.7, h: 0.8,
-  fontSize: FONTS.vocab, fontFace: FONTS.face, color: COLORS.primary,
-  bold: true
-});
+# Text area (placeholder 2, left side below title)
+tf = slide.placeholders[2].text_frame
+tf.word_wrap = True
 
-// Part of speech
-slide.addText("(noun)", {
-  x: 4.8, y: 1.85, w: 4.7, h: 0.4,
-  fontSize: 18, fontFace: FONTS.face, color: GRAMMAR.noun,  // Blue for nouns
-  italics: true
-});
+# Word — large
+p = tf.paragraphs[0]
+add_run(p, "umbrella", size=SIZE_VOCAB, font=FONT_BODY, bold=True, color=COLORS["primary"])
 
-// Definition
-slide.addText("A thing you hold over your head to stay dry when it rains.", {
-  x: 4.8, y: 2.3, w: 4.7, h: 0.8,
-  fontSize: 22, fontFace: FONTS.face, color: COLORS.body
-});
+# Part of speech
+p2 = tf.add_paragraph()
+add_run(p2, "(noun)", size=Pt(18), font=FONT_BODY, italic=True, color=GRAMMAR["noun"])
+p2.space_after = Pt(8)
 
-// Example sentence — with target word bolded
-slide.addText([
-  { text: "Example: ", options: { bold: true, color: COLORS.accent } },
-  { text: "Don't forget your ", options: {} },
-  { text: "umbrella", options: { bold: true } },
-  { text: " — it's going to rain today!", options: {} },
-], {
-  x: 4.8, y: 3.2, w: 4.7, h: 0.8,
-  fontSize: 22, fontFace: FONTS.face, color: COLORS.body
-});
+# Definition
+p3 = tf.add_paragraph()
+add_run(p3, "A thing you hold over your head to stay dry when it rains.",
+        size=Pt(20), font=FONT_BODY, color=COLORS["body"])
+p3.space_after = Pt(12)
+
+# Example with target word bolded
+p4 = tf.add_paragraph()
+add_run(p4, "Example: ", size=Pt(20), font=FONT_BODY, bold=True, color=COLORS["accent"])
+add_run(p4, "Don't forget your ", size=Pt(20), font=FONT_BODY, color=COLORS["body"])
+add_run(p4, "umbrella", size=Pt(20), font=FONT_BODY, bold=True, color=COLORS["body"])
+add_run(p4, " — it's raining!", size=Pt(20), font=FONT_BODY, color=COLORS["body"])
 ```
 
 ---
 
 ## 5. Vocabulary Slide (Grouped)
 
-**Purpose:** Present 4–6 thematically grouped words. Good for review or when introducing a word set.
+**Purpose:** Present 4–6 thematically grouped words in two columns.
+**Layout:** 3 — "Two Content"
 
-```javascript
-// Title
-slide.addText("Weather Vocabulary", {
-  x: MARGIN, y: 0.2, w: 9.0, h: 0.6,
-  fontSize: FONTS.title, fontFace: FONTS.face, color: COLORS.primary, bold: true
-});
+```python
+slide = prs.slides.add_slide(prs.slide_layouts[3])
 
-// Divider
-slide.addShape(pres.shapes.RECTANGLE, {
-  x: MARGIN, y: 0.8, w: 9.0, h: 0.025, fill: { color: COLORS.rule }
-});
+# Title
+slide.placeholders[0].text = "Weather Vocabulary"
 
-// Words arranged in a 2-column grid
-// Left column
-const words = [
-  { word: "sunny", def: "bright, with lots of sun", y: 1.1 },
-  { word: "cloudy", def: "covered with clouds, gray sky", y: 2.2 },
-  { word: "rainy", def: "raining, wet weather", y: 3.3 },
-];
+# Left column (placeholder 1)
+tf_left = slide.placeholders[1].text_frame
+tf_left.word_wrap = True
+words_left = [
+    ("sunny", "bright, with lots of sun"),
+    ("cloudy", "covered with clouds"),
+    ("rainy", "raining, wet weather"),
+]
+for i, (word, defn) in enumerate(words_left):
+    p = tf_left.paragraphs[0] if i == 0 else tf_left.add_paragraph()
+    add_run(p, word, size=Pt(26), font=FONT_BODY, bold=True, color=COLORS["primary"])
+    p.space_after = Pt(2)
+    p2 = tf_left.add_paragraph()
+    add_run(p2, defn, size=Pt(18), font=FONT_BODY, color=COLORS["body"])
+    p2.space_after = Pt(16)
 
-const wordsRight = [
-  { word: "windy", def: "strong wind blowing", y: 1.1 },
-  { word: "snowy", def: "snow falling from the sky", y: 2.2 },
-  { word: "foggy", def: "thick mist, hard to see far", y: 3.3 },
-];
-
-// Left column words
-words.forEach(w => {
-  // Image placeholder
-  slide.addImage({ path: `${w.word}.png`, x: MARGIN, y: w.y, w: 0.9, h: 0.9, sizing: { type: "contain" } });
-  // Word
-  slide.addText(w.word, {
-    x: 1.6, y: w.y, w: 2.5, h: 0.45,
-    fontSize: 26, fontFace: FONTS.face, color: COLORS.primary, bold: true
-  });
-  // Definition
-  slide.addText(w.def, {
-    x: 1.6, y: w.y + 0.45, w: 3.0, h: 0.45,
-    fontSize: 18, fontFace: FONTS.face, color: COLORS.body
-  });
-});
-
-// Right column words
-wordsRight.forEach(w => {
-  slide.addImage({ path: `${w.word}.png`, x: 5.2, y: w.y, w: 0.9, h: 0.9, sizing: { type: "contain" } });
-  slide.addText(w.word, {
-    x: 6.3, y: w.y, w: 2.5, h: 0.45,
-    fontSize: 26, fontFace: FONTS.face, color: COLORS.primary, bold: true
-  });
-  slide.addText(w.def, {
-    x: 6.3, y: w.y + 0.45, w: 3.2, h: 0.45,
-    fontSize: 18, fontFace: FONTS.face, color: COLORS.body
-  });
-});
+# Right column (placeholder 2)
+tf_right = slide.placeholders[2].text_frame
+tf_right.word_wrap = True
+words_right = [
+    ("windy", "strong wind blowing"),
+    ("snowy", "snow falling from the sky"),
+    ("foggy", "thick mist, hard to see"),
+]
+for i, (word, defn) in enumerate(words_right):
+    p = tf_right.paragraphs[0] if i == 0 else tf_right.add_paragraph()
+    add_run(p, word, size=Pt(26), font=FONT_BODY, bold=True, color=COLORS["primary"])
+    p.space_after = Pt(2)
+    p2 = tf_right.add_paragraph()
+    add_run(p2, defn, size=Pt(18), font=FONT_BODY, color=COLORS["body"])
+    p2.space_after = Pt(16)
 ```
-
-**Note:** If six words with definitions and images won't fit at these sizes, reduce definition font to 16 pt or split across two slides. Content must fit.
 
 ---
 
 ## 6. Grammar Rule Slide
 
-**Purpose:** Present a grammar rule clearly. Rule in a callout box, examples below with colour-coded grammar elements.
+**Purpose:** Present a grammar rule clearly. Rule in a callout box, examples below with colour-coded elements.
+**Layout:** 5 — "Title Only" (custom body with callout box + examples)
 
-```javascript
-// Title
-slide.addText("Past Simple — Regular Verbs", {
-  x: MARGIN, y: 0.2, w: 9.0, h: 0.6,
-  fontSize: FONTS.title, fontFace: FONTS.face, color: COLORS.primary, bold: true
-});
+```python
+slide = prs.slides.add_slide(prs.slide_layouts[5])
 
-// Divider
-slide.addShape(pres.shapes.RECTANGLE, {
-  x: MARGIN, y: 0.8, w: 9.0, h: 0.025, fill: { color: COLORS.rule }
-});
+# Title
+slide.placeholders[0].text = "Past Simple — Regular Verbs"
 
-// RULE — in a highlighted callout box
-slide.addShape(pres.shapes.ROUNDED_RECTANGLE, {
-  x: 0.8, y: 1.0, w: 8.4, h: 1.0,
-  fill: { color: COLORS.callout }, line: { color: COLORS.accent, pt: 1.5 }, rectRadius: 0.1
-});
+# Rule callout box
+add_rounded_rect(slide,
+    Inches(1.0), Inches(2.1), Inches(11.3), Inches(1.2),
+    fill_color=COLORS["callout"], border_color=COLORS["accent"])
 
-slide.addText([
-  { text: "RULE: ", options: { bold: true, fontSize: 24 } },
-  { text: "Add ", options: { fontSize: 24 } },
-  { text: "-ed", options: { bold: true, color: GRAMMAR.verb, fontSize: 26 } },
-  { text: " to the base form of the verb to make the past simple.", options: { fontSize: 24 } },
-], {
-  x: 1.0, y: 1.1, w: 8.0, h: 0.8,
-  fontFace: FONTS.face, color: COLORS.primary,
-  align: "center", valign: "middle"
-});
+rule_box = slide.shapes.add_textbox(
+    Inches(1.2), Inches(2.2), Inches(10.9), Inches(1.0))
+tf = rule_box.text_frame
+tf.word_wrap = True
+p = tf.paragraphs[0]
+p.alignment = PP_ALIGN.CENTER
+add_run(p, "RULE: ", size=SIZE_BODY, font=FONT_BODY, bold=True, color=COLORS["primary"])
+add_run(p, "Add ", size=SIZE_BODY, font=FONT_BODY, color=COLORS["primary"])
+add_run(p, "-ed", size=Pt(26), font=FONT_BODY, bold=True, color=GRAMMAR["verb"])
+add_run(p, " to the base form of the verb.", size=SIZE_BODY, font=FONT_BODY, color=COLORS["primary"])
 
-// Examples section header
-slide.addText("EXAMPLES", {
-  x: MARGIN, y: 2.2, w: 9.0, h: 0.4,
-  fontSize: 20, fontFace: FONTS.face, color: COLORS.accent, bold: true
-});
+# Examples header
+add_textbox(slide,
+    MARGIN, Inches(3.5), Inches(11.5), Inches(0.4),
+    text="EXAMPLES", size=Pt(20), font=FONT_BODY,
+    bold=True, color=COLORS["accent"])
 
-// Examples with colour-coded verbs (red = verb)
-slide.addText([
-  { text: "I ", options: {} },
-  { text: "walked", options: { color: GRAMMAR.verb, bold: true } },
-  { text: " to school yesterday.", options: { breakLine: true } },
-  { text: "She ", options: {} },
-  { text: "played", options: { color: GRAMMAR.verb, bold: true } },
-  { text: " football after class.", options: { breakLine: true } },
-  { text: "We ", options: {} },
-  { text: "watched", options: { color: GRAMMAR.verb, bold: true } },
-  { text: " a film last night.", options: { breakLine: true } },
-  { text: "They ", options: {} },
-  { text: "listened", options: { color: GRAMMAR.verb, bold: true } },
-  { text: " to music at the party.", options: { breakLine: true } },
-], {
-  x: 1.0, y: 2.65, w: 8.0, h: 2.6,
-  fontSize: FONTS.body, fontFace: FONTS.face, color: COLORS.body,
-  paraSpaceAfter: 14
-});
+# Examples with colour-coded verbs
+examples_box = slide.shapes.add_textbox(
+    Inches(1.3), Inches(4.0), Inches(10.7), Inches(3.0))
+tf = examples_box.text_frame
+tf.word_wrap = True
+
+examples = [
+    ("I ", "walked", " to school yesterday."),
+    ("She ", "played", " football after class."),
+    ("We ", "watched", " a film last night."),
+    ("They ", "listened", " to music at the party."),
+]
+for i, (before, verb, after) in enumerate(examples):
+    p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+    p.space_after = Pt(14)
+    add_run(p, before, size=SIZE_BODY, font=FONT_BODY, color=COLORS["body"])
+    add_run(p, verb, size=SIZE_BODY, font=FONT_BODY, bold=True, color=GRAMMAR["verb"])
+    add_run(p, after, size=SIZE_BODY, font=FONT_BODY, color=COLORS["body"])
 ```
 
 ---
@@ -361,111 +450,85 @@ slide.addText([
 ## 7. Fill-in-the-Blank Exercise
 
 **Purpose:** Controlled practice. Students complete sentences with the target language.
+**Layout:** 5 — "Title Only" (instruction + items + word bank)
 
-```javascript
-// Title with instruction
-slide.addText("Fill in the Blank — Use the Past Simple", {
-  x: MARGIN, y: 0.2, w: 9.0, h: 0.6,
-  fontSize: FONTS.title, fontFace: FONTS.face, color: COLORS.primary, bold: true
-});
+```python
+slide = prs.slides.add_slide(prs.slide_layouts[5])
 
-// Divider
-slide.addShape(pres.shapes.RECTANGLE, {
-  x: MARGIN, y: 0.8, w: 9.0, h: 0.025, fill: { color: COLORS.rule }
-});
+# Title
+slide.placeholders[0].text = "Fill in the Blank — Use the Past Simple"
 
-// Instruction
-slide.addText("Write the correct past simple form of the verb in brackets.", {
-  x: MARGIN, y: 0.9, w: 9.0, h: 0.5,
-  fontSize: 22, fontFace: FONTS.face, color: COLORS.body, italics: true
-});
+# Instruction
+add_textbox(slide,
+    MARGIN, Inches(2.0), CONTENT_W, Inches(0.5),
+    text="Write the correct past simple form of the verb in brackets.",
+    size=SIZE_INSTRUCTION, font=FONT_BODY, italic=True, color=COLORS["body"])
 
-// Exercise items
-slide.addText([
-  { text: "1. I __________ (walk) to school yesterday.", options: { breakLine: true } },
-  { text: "2. She __________ (play) tennis after class.", options: { breakLine: true } },
-  { text: "3. They __________ (watch) TV last night.", options: { breakLine: true } },
-  { text: "4. We __________ (listen) to the teacher carefully.", options: { breakLine: true } },
-  { text: "5. He __________ (clean) his room on Saturday.", options: { breakLine: true } },
-], {
-  x: 0.8, y: 1.5, w: 8.4, h: 3.0,
-  fontSize: FONTS.exercise, fontFace: FONTS.face, color: COLORS.body,
-  paraSpaceAfter: 12
-});
+# Exercise items
+items_box = slide.shapes.add_textbox(
+    Inches(1.2), Inches(2.7), Inches(11.0), Inches(3.2))
+tf = items_box.text_frame
+tf.word_wrap = True
 
-// Word bank (optional — helpful for lower levels)
-slide.addShape(pres.shapes.ROUNDED_RECTANGLE, {
-  x: 0.8, y: 4.6, w: 8.4, h: 0.7,
-  fill: { color: COLORS.highlight }, line: { color: "E6C800", pt: 1 }, rectRadius: 0.06
-});
+items = [
+    "1. I __________ (walk) to school yesterday.",
+    "2. She __________ (play) tennis after class.",
+    "3. They __________ (watch) TV last night.",
+    "4. We __________ (listen) to the teacher carefully.",
+    "5. He __________ (clean) his room on Saturday.",
+]
+for i, item in enumerate(items):
+    p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+    p.space_after = Pt(12)
+    add_run(p, item, size=SIZE_EXERCISE, font=FONT_BODY, color=COLORS["body"])
 
-slide.addText("WORD BANK: walked  ·  played  ·  watched  ·  listened  ·  cleaned", {
-  x: 1.0, y: 4.65, w: 8.0, h: 0.6,
-  fontSize: 20, fontFace: FONTS.face, color: "5A4000", bold: true,
-  align: "center", valign: "middle"
-});
+# Word bank
+add_rounded_rect(slide,
+    Inches(1.0), Inches(6.1), Inches(11.3), Inches(0.8),
+    fill_color=COLORS["highlight"], border_color=RGBColor(0xE6, 0xC8, 0x00))
+
+add_textbox(slide,
+    Inches(1.2), Inches(6.2), Inches(10.9), Inches(0.6),
+    text="WORD BANK:  walked  ·  played  ·  watched  ·  listened  ·  cleaned",
+    size=Pt(20), font=FONT_BODY, bold=True,
+    color=RGBColor(0x5A, 0x40, 0x00), alignment=PP_ALIGN.CENTER)
 ```
 
 ---
 
 ## 8. Matching Exercise
 
-**Purpose:** Students match items from two columns (word to definition, question to answer, etc.).
+**Purpose:** Students match items from two columns.
+**Layout:** 3 — "Two Content"
 
-```javascript
-// Title with instruction
-slide.addText("Match — Connect the Word to the Definition", {
-  x: MARGIN, y: 0.2, w: 9.0, h: 0.6,
-  fontSize: FONTS.title, fontFace: FONTS.face, color: COLORS.primary, bold: true
-});
+```python
+slide = prs.slides.add_slide(prs.slide_layouts[3])
 
-// Divider
-slide.addShape(pres.shapes.RECTANGLE, {
-  x: MARGIN, y: 0.8, w: 9.0, h: 0.025, fill: { color: COLORS.rule }
-});
+# Title
+slide.placeholders[0].text = "Match — Word to Definition"
 
-// Instruction
-slide.addText("Draw a line from each word on the left to its meaning on the right.", {
-  x: MARGIN, y: 0.9, w: 9.0, h: 0.45,
-  fontSize: 20, fontFace: FONTS.face, color: COLORS.body, italics: true
-});
+# Left column (placeholder 1) — words
+tf_left = slide.placeholders[1].text_frame
+tf_left.word_wrap = True
+left_items = ["1. sunny", "2. foggy", "3. windy", "4. stormy"]
+for i, item in enumerate(left_items):
+    p = tf_left.paragraphs[0] if i == 0 else tf_left.add_paragraph()
+    p.space_after = Pt(16)
+    add_run(p, item, size=SIZE_EXERCISE, font=FONT_BODY, bold=True, color=COLORS["body"])
 
-// Left column header
-slide.addText("Word", {
-  x: 0.8, y: 1.45, w: 3.5, h: 0.4,
-  fontSize: 22, fontFace: FONTS.face, color: COLORS.accent, bold: true
-});
-
-// Right column header
-slide.addText("Definition", {
-  x: 5.5, y: 1.45, w: 4.0, h: 0.4,
-  fontSize: 22, fontFace: FONTS.face, color: COLORS.accent, bold: true
-});
-
-// Left column — words (numbered)
-const leftItems = ["1. sunny", "2. foggy", "3. windy", "4. stormy"];
-slide.addText(leftItems.map(item => ({
-  text: item, options: { breakLine: true, bold: true }
-})), {
-  x: 0.8, y: 1.9, w: 3.5, h: 3.0,
-  fontSize: FONTS.exercise, fontFace: FONTS.face, color: COLORS.body,
-  paraSpaceAfter: 16
-});
-
-// Right column — definitions (lettered, shuffled order)
-const rightItems = [
-  "a) strong wind blowing hard",
-  "b) bright sky with lots of sun",
-  "c) thick mist, hard to see far",
-  "d) thunder, lightning, heavy rain"
-];
-slide.addText(rightItems.map(item => ({
-  text: item, options: { breakLine: true }
-})), {
-  x: 5.5, y: 1.9, w: 4.0, h: 3.0,
-  fontSize: FONTS.exercise, fontFace: FONTS.face, color: COLORS.body,
-  paraSpaceAfter: 16
-});
+# Right column (placeholder 2) — definitions (shuffled)
+tf_right = slide.placeholders[2].text_frame
+tf_right.word_wrap = True
+right_items = [
+    "a) strong wind blowing hard",
+    "b) bright sky with lots of sun",
+    "c) thick mist, hard to see far",
+    "d) thunder, lightning, heavy rain",
+]
+for i, item in enumerate(right_items):
+    p = tf_right.paragraphs[0] if i == 0 else tf_right.add_paragraph()
+    p.space_after = Pt(16)
+    add_run(p, item, size=SIZE_EXERCISE, font=FONT_BODY, color=COLORS["body"])
 ```
 
 ---
@@ -473,161 +536,138 @@ slide.addText(rightItems.map(item => ({
 ## 9. Multiple Choice Exercise
 
 **Purpose:** Students choose the correct answer from options.
+**Layout:** 1 — "Title and Content"
 
-```javascript
-// Title with instruction
-slide.addText("Choose the Correct Answer", {
-  x: MARGIN, y: 0.2, w: 9.0, h: 0.6,
-  fontSize: FONTS.title, fontFace: FONTS.face, color: COLORS.primary, bold: true
-});
+```python
+slide = prs.slides.add_slide(prs.slide_layouts[1])
 
-// Divider
-slide.addShape(pres.shapes.RECTANGLE, {
-  x: MARGIN, y: 0.8, w: 9.0, h: 0.025, fill: { color: COLORS.rule }
-});
+# Title
+slide.placeholders[0].text = "Choose the Correct Answer"
 
-// Question
-slide.addText("She __________ to the park yesterday.", {
-  x: 0.8, y: 1.1, w: 8.4, h: 0.6,
-  fontSize: 26, fontFace: FONTS.face, color: COLORS.body, bold: true
-});
+# Content
+tf = slide.placeholders[1].text_frame
+tf.word_wrap = True
 
-// Options — each in its own text box for clear separation
-const options = [
-  { label: "A)", text: "go", y: 2.0 },
-  { label: "B)", text: "goes", y: 2.7 },
-  { label: "C)", text: "went", y: 3.4 },
-  { label: "D)", text: "going", y: 4.1 },
-];
+# Question
+p = tf.paragraphs[0]
+add_run(p, "She __________ to the park yesterday.",
+        size=Pt(26), font=FONT_BODY, bold=True, color=COLORS["body"])
+p.space_after = Pt(20)
 
-options.forEach(opt => {
-  slide.addText([
-    { text: opt.label + " ", options: { bold: true, color: COLORS.accent } },
-    { text: opt.text, options: {} },
-  ], {
-    x: 1.5, y: opt.y, w: 7.0, h: 0.55,
-    fontSize: FONTS.exercise, fontFace: FONTS.face, color: COLORS.body
-  });
-});
+# Options
+options = ["A)  go", "B)  goes", "C)  went", "D)  going"]
+for opt in options:
+    p = tf.add_paragraph()
+    p.space_after = Pt(14)
+    label = opt[:2]
+    text = opt[4:]
+    add_run(p, label + "  ", size=SIZE_EXERCISE, font=FONT_BODY, bold=True, color=COLORS["accent"])
+    add_run(p, text, size=SIZE_EXERCISE, font=FONT_BODY, color=COLORS["body"])
 ```
 
-**For multiple questions per slide:** Stack questions vertically. Reduce font size if needed to fit — content must not overflow. If more than 2 questions with 4 options each, split across slides.
+**For multiple questions per slide:** Reduce font size to fit. If more than 2 questions with 4 options each, split across slides.
 
 ---
 
 ## 10. Error Correction Exercise
 
-**Purpose:** Students identify and fix mistakes in sentences. Builds accuracy and attention to form.
+**Purpose:** Students identify and fix mistakes. Builds accuracy and attention to form.
+**Layout:** 5 — "Title Only" (items + optional hint box)
 
-```javascript
-// Title with instruction
-slide.addText("Find and Fix the Mistakes", {
-  x: MARGIN, y: 0.2, w: 9.0, h: 0.6,
-  fontSize: FONTS.title, fontFace: FONTS.face, color: COLORS.primary, bold: true
-});
+```python
+slide = prs.slides.add_slide(prs.slide_layouts[5])
 
-// Divider
-slide.addShape(pres.shapes.RECTANGLE, {
-  x: MARGIN, y: 0.8, w: 9.0, h: 0.025, fill: { color: COLORS.rule }
-});
+# Title
+slide.placeholders[0].text = "Find and Fix the Mistakes"
 
-// Instruction
-slide.addText("Each sentence has ONE mistake. Find it and write the correct sentence.", {
-  x: MARGIN, y: 0.9, w: 9.0, h: 0.5,
-  fontSize: 20, fontFace: FONTS.face, color: COLORS.body, italics: true
-});
+# Instruction
+add_textbox(slide,
+    MARGIN, Inches(2.0), CONTENT_W, Inches(0.5),
+    text="Each sentence has ONE mistake. Find it and write the correct sentence.",
+    size=SIZE_INSTRUCTION, font=FONT_BODY, italic=True, color=COLORS["body"])
 
-// Incorrect sentences — errors are shown as-is (students must find them)
-slide.addText([
-  { text: "1. She walkd to school yesterday.", options: { breakLine: true } },
-  { text: "2. I did not played football last week.", options: { breakLine: true } },
-  { text: "3. They was very happy at the party.", options: { breakLine: true } },
-  { text: "4. He cleanned his room on Saturday.", options: { breakLine: true } },
-  { text: "5. We didn't went to the cinema.", options: { breakLine: true } },
-], {
-  x: 0.8, y: 1.5, w: 8.4, h: 3.2,
-  fontSize: FONTS.exercise, fontFace: FONTS.face, color: COLORS.body,
-  paraSpaceAfter: 14
-});
+# Items
+items_box = slide.shapes.add_textbox(
+    Inches(1.2), Inches(2.7), Inches(11.0), Inches(3.2))
+tf = items_box.text_frame
+tf.word_wrap = True
 
-// Hint box (optional — for lower levels)
-slide.addShape(pres.shapes.ROUNDED_RECTANGLE, {
-  x: 0.8, y: 4.8, w: 8.4, h: 0.6,
-  fill: { color: COLORS.callout }, line: { color: COLORS.accent, pt: 1 }, rectRadius: 0.06
-});
+sentences = [
+    "1. She walkd to school yesterday.",
+    "2. I did not played football last week.",
+    "3. They was very happy at the party.",
+    "4. He cleanned his room on Saturday.",
+    "5. We didn't went to the cinema.",
+]
+for i, s in enumerate(sentences):
+    p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+    p.space_after = Pt(14)
+    add_run(p, s, size=SIZE_EXERCISE, font=FONT_BODY, color=COLORS["body"])
 
-slide.addText("HINT: Look for spelling, verb form, and auxiliary verb errors.", {
-  x: 1.0, y: 4.85, w: 8.0, h: 0.5,
-  fontSize: 18, fontFace: FONTS.face, color: COLORS.accent,
-  align: "center", valign: "middle", italics: true
-});
+# Hint box (optional — for lower levels)
+add_rounded_rect(slide,
+    Inches(1.0), Inches(6.2), Inches(11.3), Inches(0.7),
+    fill_color=COLORS["callout"], border_color=COLORS["accent"])
+add_textbox(slide,
+    Inches(1.2), Inches(6.3), Inches(10.9), Inches(0.5),
+    text="HINT: Look for spelling, verb form, and auxiliary verb errors.",
+    size=Pt(18), font=FONT_BODY, italic=True,
+    color=COLORS["accent"], alignment=PP_ALIGN.CENTER)
 ```
 
 ---
 
 ## 11. Sentence Frame / Model Dialogue
 
-**Purpose:** Provide structured language frames students can use. Blanks are highlighted; word bank or prompts support production.
+**Purpose:** Provide structured language frames with highlighted blanks and a word bank.
+**Layout:** 5 — "Title Only"
 
-```javascript
-// Title
-slide.addText("Talking About Last Weekend", {
-  x: MARGIN, y: 0.2, w: 9.0, h: 0.6,
-  fontSize: FONTS.title, fontFace: FONTS.face, color: COLORS.primary, bold: true
-});
+```python
+slide = prs.slides.add_slide(prs.slide_layouts[5])
 
-// Divider
-slide.addShape(pres.shapes.RECTANGLE, {
-  x: MARGIN, y: 0.8, w: 9.0, h: 0.025, fill: { color: COLORS.rule }
-});
+# Title
+slide.placeholders[0].text = "Talking About Last Weekend"
 
-// Instruction
-slide.addText("Use these sentence frames to tell your partner about your weekend.", {
-  x: MARGIN, y: 0.9, w: 9.0, h: 0.45,
-  fontSize: 20, fontFace: FONTS.face, color: COLORS.body, italics: true
-});
+# Instruction
+add_textbox(slide,
+    MARGIN, Inches(2.0), CONTENT_W, Inches(0.45),
+    text="Use these sentence frames to tell your partner about your weekend.",
+    size=SIZE_INSTRUCTION, font=FONT_BODY, italic=True, color=COLORS["body"])
 
-// Sentence frames — blanks highlighted with underline and accent colour
-slide.addText([
-  { text: "On Saturday, I ", options: {} },
-  { text: "______________", options: { color: COLORS.accent, bold: true } },
-  { text: " with my ", options: {} },
-  { text: "______________", options: { color: COLORS.accent, bold: true } },
-  { text: ".", options: { breakLine: true } },
-  { text: "", options: { breakLine: true } },
-  { text: "It was really ", options: {} },
-  { text: "______________", options: { color: COLORS.accent, bold: true } },
-  { text: " because ", options: {} },
-  { text: "______________", options: { color: COLORS.accent, bold: true } },
-  { text: ".", options: { breakLine: true } },
-  { text: "", options: { breakLine: true } },
-  { text: "On Sunday, I didn't ", options: {} },
-  { text: "______________", options: { color: COLORS.accent, bold: true } },
-  { text: ". Instead, I ", options: {} },
-  { text: "______________", options: { color: COLORS.accent, bold: true } },
-  { text: ".", options: { breakLine: true } },
-], {
-  x: 0.8, y: 1.4, w: 8.4, h: 2.2,
-  fontSize: FONTS.body, fontFace: FONTS.face, color: COLORS.body,
-  paraSpaceAfter: 8
-});
+# Sentence frames with accent-coloured blanks
+frames_box = slide.shapes.add_textbox(
+    Inches(1.2), Inches(2.7), Inches(10.9), Inches(2.5))
+tf = frames_box.text_frame
+tf.word_wrap = True
 
-// Word bank / prompt ideas
-slide.addShape(pres.shapes.ROUNDED_RECTANGLE, {
-  x: 0.8, y: 3.8, w: 8.4, h: 1.4,
-  fill: { color: COLORS.highlight }, line: { color: "E6C800", pt: 1 }, rectRadius: 0.06
-});
+frames = [
+    [("On Saturday, I ", None), ("______________", COLORS["accent"]),
+     (" with my ", None), ("______________", COLORS["accent"]), (".", None)],
+    [("It was really ", None), ("______________", COLORS["accent"]),
+     (" because ", None), ("______________", COLORS["accent"]), (".", None)],
+    [("On Sunday, I didn't ", None), ("______________", COLORS["accent"]),
+     (". Instead, I ", None), ("______________", COLORS["accent"]), (".", None)],
+]
+for i, frame in enumerate(frames):
+    p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+    p.space_after = Pt(16)
+    for text, color in frame:
+        add_run(p, text, size=SIZE_BODY, font=FONT_BODY,
+                bold=color is not None, color=color or COLORS["body"])
 
-slide.addText("IDEAS", {
-  x: 1.0, y: 3.85, w: 8.0, h: 0.35,
-  fontSize: 18, fontFace: FONTS.face, color: "5A4000", bold: true
-});
-
-slide.addText("played football  ·  watched a film  ·  visited my grandmother  ·  cooked dinner  ·  stayed home  ·  went shopping  ·  fun  ·  boring  ·  exciting  ·  relaxing", {
-  x: 1.0, y: 4.2, w: 8.0, h: 0.85,
-  fontSize: 18, fontFace: FONTS.face, color: "5A4000",
-  align: "center", valign: "top"
-});
+# Word bank
+add_rounded_rect(slide,
+    Inches(1.0), Inches(5.5), Inches(11.3), Inches(1.3),
+    fill_color=COLORS["highlight"], border_color=RGBColor(0xE6, 0xC8, 0x00))
+add_textbox(slide,
+    Inches(1.2), Inches(5.55), Inches(10.9), Inches(0.35),
+    text="IDEAS", size=Pt(18), font=FONT_BODY, bold=True,
+    color=RGBColor(0x5A, 0x40, 0x00))
+add_textbox(slide,
+    Inches(1.2), Inches(5.9), Inches(10.9), Inches(0.8),
+    text="played football  ·  watched a film  ·  visited grandma  ·  cooked dinner  ·  stayed home  ·  fun  ·  boring  ·  exciting",
+    size=Pt(18), font=FONT_BODY,
+    color=RGBColor(0x5A, 0x40, 0x00), alignment=PP_ALIGN.CENTER)
 ```
 
 ---
@@ -635,282 +675,263 @@ slide.addText("played football  ·  watched a film  ·  visited my grandmother  
 ## 12. Discussion Prompt Slide
 
 **Purpose:** Set up pair/group discussion with a prompt and sentence starters.
+**Layout:** 1 — "Title and Content"
 
-```javascript
-// Title
-slide.addText("Pair Discussion — What Did You Do Last Weekend?", {
-  x: MARGIN, y: 0.2, w: 9.0, h: 0.6,
-  fontSize: FONTS.title, fontFace: FONTS.face, color: COLORS.primary, bold: true
-});
+```python
+slide = prs.slides.add_slide(prs.slide_layouts[1])
 
-// Divider
-slide.addShape(pres.shapes.RECTANGLE, {
-  x: MARGIN, y: 0.8, w: 9.0, h: 0.025, fill: { color: COLORS.rule }
-});
+# Title
+slide.placeholders[0].text = "Pair Discussion — What Did You Do Last Weekend?"
 
-// Activity instruction
-slide.addText([
-  { text: "With your partner: ", options: { bold: true } },
-  { text: "Ask and answer these questions. Use FULL SENTENCES.", options: {} },
-], {
-  x: MARGIN, y: 1.0, w: 9.0, h: 0.5,
-  fontSize: 22, fontFace: FONTS.face, color: COLORS.body
-});
+# Content
+tf = slide.placeholders[1].text_frame
+tf.word_wrap = True
 
-// Discussion questions
-slide.addText([
-  { text: "1. What did you do on Saturday?", options: { breakLine: true } },
-  { text: "2. Did you go anywhere special?", options: { breakLine: true } },
-  { text: "3. What was the best part of your weekend?", options: { breakLine: true } },
-], {
-  x: 0.8, y: 1.7, w: 8.4, h: 1.6,
-  fontSize: FONTS.body, fontFace: FONTS.face, color: COLORS.body,
-  paraSpaceAfter: 12
-});
+# Activity instruction
+p = tf.paragraphs[0]
+add_run(p, "With your partner: ", size=SIZE_BODY, font=FONT_BODY, bold=True, color=COLORS["body"])
+add_run(p, "Ask and answer these questions. Use FULL SENTENCES.", size=SIZE_BODY, font=FONT_BODY, color=COLORS["body"])
+p.space_after = Pt(16)
 
-// Sentence starters
-slide.addText("SENTENCE STARTERS", {
-  x: MARGIN, y: 3.4, w: 9.0, h: 0.4,
-  fontSize: 20, fontFace: FONTS.face, color: COLORS.accent, bold: true
-});
+# Questions
+questions = [
+    "1. What did you do on Saturday?",
+    "2. Did you go anywhere special?",
+    "3. What was the best part of your weekend?",
+]
+for q in questions:
+    p = tf.add_paragraph()
+    p.space_after = Pt(12)
+    add_run(p, q, size=SIZE_BODY, font=FONT_BODY, color=COLORS["body"])
 
-slide.addText([
-  { text: "\"On Saturday, I ...\"", options: { breakLine: true } },
-  { text: "\"Yes, I went to ... / No, I stayed ...\"", options: { breakLine: true } },
-  { text: "\"The best part was ... because ...\"", options: { breakLine: true } },
-], {
-  x: 1.0, y: 3.8, w: 8.0, h: 1.5,
-  fontSize: 22, fontFace: FONTS.face, color: COLORS.body,
-  italics: true, paraSpaceAfter: 8
-});
+# Sentence starters header
+p = tf.add_paragraph()
+p.space_after = Pt(8)
+add_run(p, "SENTENCE STARTERS", size=Pt(20), font=FONT_BODY, bold=True, color=COLORS["accent"])
+
+starters = [
+    '"On Saturday, I ..."',
+    '"Yes, I went to ... / No, I stayed ..."',
+    '"The best part was ... because ..."',
+]
+for s in starters:
+    p = tf.add_paragraph()
+    p.space_after = Pt(6)
+    add_run(p, s, size=Pt(22), font=FONT_BODY, italic=True, color=COLORS["body"])
 ```
 
 ---
 
 ## 13. Comparison Table Slide
 
-**Purpose:** Side-by-side comparison of grammar forms, vocabulary categories, or other paired concepts.
+**Purpose:** Side-by-side comparison of grammar forms or vocabulary categories.
+**Layout:** 5 — "Title Only" (custom table below title)
 
-```javascript
-// Title
-slide.addText("Present Simple vs. Present Continuous", {
-  x: MARGIN, y: 0.2, w: 9.0, h: 0.6,
-  fontSize: FONTS.title, fontFace: FONTS.face, color: COLORS.primary, bold: true
-});
+```python
+from pptx.util import Inches, Pt
 
-// Divider
-slide.addShape(pres.shapes.RECTANGLE, {
-  x: MARGIN, y: 0.8, w: 9.0, h: 0.025, fill: { color: COLORS.rule }
-});
+slide = prs.slides.add_slide(prs.slide_layouts[5])
 
-// Table
-const tableRows = [
-  [
-    { text: "", options: { bold: true, fill: { color: COLORS.primary }, color: "FFFFFF", fontSize: 20 } },
-    { text: "Present Simple", options: { bold: true, fill: { color: COLORS.primary }, color: "FFFFFF", fontSize: 20 } },
-    { text: "Present Continuous", options: { bold: true, fill: { color: COLORS.primary }, color: "FFFFFF", fontSize: 20 } },
-  ],
-  [
-    { text: "Form", options: { bold: true, fontSize: 20 } },
-    { text: "subject + base verb\n(he/she/it + verb-s)", options: { fontSize: 20 } },
-    { text: "subject + am/is/are + verb-ing", options: { fontSize: 20 } },
-  ],
-  [
-    { text: "Use", options: { bold: true, fontSize: 20 } },
-    { text: "habits, routines,\ngeneral truths", options: { fontSize: 20 } },
-    { text: "actions happening\nright now", options: { fontSize: 20 } },
-  ],
-  [
-    { text: "Signal words", options: { bold: true, fontSize: 20 } },
-    { text: "always, usually,\nevery day, often", options: { fontSize: 20 } },
-    { text: "now, right now,\nat the moment, today", options: { fontSize: 20 } },
-  ],
-  [
-    { text: "Example", options: { bold: true, fontSize: 20 } },
-    { text: "I play football\nevery Saturday.", options: { fontSize: 20 } },
-    { text: "I am playing football\nright now.", options: { fontSize: 20 } },
-  ],
-];
+# Title
+slide.placeholders[0].text = "Present Simple vs. Present Continuous"
 
-slide.addTable(tableRows, {
-  x: 0.5, y: 1.0, w: 9.0,
-  colW: [1.5, 3.75, 3.75],
-  border: { color: COLORS.rule, pt: 1 },
-  rowH: [0.5, 0.7, 0.7, 0.7, 0.7],
-  fontFace: FONTS.face,
-  color: COLORS.body,
-  valign: "middle",
-  margin: [4, 8, 4, 8],
-});
+# Table
+rows, cols = 5, 3
+tbl_shape = slide.shapes.add_table(
+    rows, cols, Inches(0.8), Inches(2.1), Inches(11.7), Inches(4.5))
+table = tbl_shape.table
+
+# Header row
+headers = ["", "Present Simple", "Present Continuous"]
+for j, h in enumerate(headers):
+    cell = table.cell(0, j)
+    cell.text = h
+    for p in cell.text_frame.paragraphs:
+        for run in p.runs:
+            run.font.size = Pt(20)
+            run.font.bold = True
+            run.font.color.rgb = COLORS["white"]
+    cell.fill.solid()
+    cell.fill.fore_color.rgb = COLORS["primary"]
+
+# Data rows
+data = [
+    ["Form", "subject + base verb\n(he/she/it + verb-s)", "subject + am/is/are\n+ verb-ing"],
+    ["Use", "habits, routines,\ngeneral truths", "actions happening\nright now"],
+    ["Signal words", "always, usually,\nevery day, often", "now, right now,\nat the moment"],
+    ["Example", "I play football\nevery Saturday.", "I am playing football\nright now."],
+]
+for i, row_data in enumerate(data):
+    for j, text in enumerate(row_data):
+        cell = table.cell(i + 1, j)
+        cell.text = text
+        for p in cell.text_frame.paragraphs:
+            for run in p.runs:
+                run.font.size = Pt(20)
+                run.font.name = FONT_BODY
+                run.font.color.rgb = COLORS["body"]
+                if j == 0:
+                    run.font.bold = True
 ```
-
-**Note:** Adjust `rowH` and `fontSize` if content is longer. Tables with many rows may need smaller text — content must fit.
 
 ---
 
 ## 14. Reading / Listening Text Slide
 
-**Purpose:** Display a passage for reading comprehension or a transcript for listening activities. Font shrinks as needed to fit.
+**Purpose:** Display a passage for reading comprehension. Font shrinks as needed to fit.
+**Layout:** 5 — "Title Only"
 
-```javascript
-// Title
-slide.addText("Read the Text — Holiday Email", {
-  x: MARGIN, y: 0.2, w: 9.0, h: 0.6,
-  fontSize: FONTS.title, fontFace: FONTS.face, color: COLORS.primary, bold: true
-});
+```python
+slide = prs.slides.add_slide(prs.slide_layouts[5])
 
-// Divider
-slide.addShape(pres.shapes.RECTANGLE, {
-  x: MARGIN, y: 0.8, w: 9.0, h: 0.025, fill: { color: COLORS.rule }
-});
+# Title
+slide.placeholders[0].text = "Read the Text — Holiday Email"
 
-// Reading focus instruction
-slide.addText("Read the email. Underline all past simple verbs.", {
-  x: MARGIN, y: 0.9, w: 9.0, h: 0.4,
-  fontSize: 20, fontFace: FONTS.face, color: COLORS.accent, bold: true
-});
+# Reading focus instruction
+add_textbox(slide,
+    MARGIN, Inches(2.0), CONTENT_W, Inches(0.4),
+    text="Read the email. Underline all past simple verbs.",
+    size=Pt(20), font=FONT_BODY, bold=True, color=COLORS["accent"])
 
-// Text passage — in a lightly bordered box
-slide.addShape(pres.shapes.ROUNDED_RECTANGLE, {
-  x: 0.6, y: 1.4, w: 8.8, h: 3.8,
-  fill: { color: "FAFAFA" }, line: { color: COLORS.rule, pt: 1 }, rectRadius: 0.08
-});
+# Text passage box (lightly bordered)
+add_rounded_rect(slide,
+    Inches(0.8), Inches(2.6), Inches(11.7), Inches(4.2),
+    fill_color=RGBColor(0xFA, 0xFA, 0xFA),
+    border_color=COLORS["rule"], border_pt=1)
 
-// Passage text — font size adapts to content length
-// For short passages: 22-24 pt. For longer passages: reduce to 18-20 pt.
-// The overriding rule: all text must fit without overflow.
-slide.addText(
-  "Hi Maria!\n\n" +
-  "I arrived in London last Tuesday. On Wednesday, I visited the British Museum " +
-  "and walked along the Thames. It was really beautiful! On Thursday, I tried " +
-  "fish and chips for the first time — I loved it!\n\n" +
-  "Yesterday, I shopped at Camden Market and bought some souvenirs. " +
-  "Tomorrow I want to see Buckingham Palace.\n\n" +
-  "See you next week!\nAnna", {
-  x: 0.8, y: 1.55, w: 8.4, h: 3.5,
-  fontSize: 20, fontFace: FONTS.face, color: COLORS.body,
-  valign: "top", paraSpaceAfter: 6
-});
+# Passage text — font adapts to content length
+# Short: 22-24pt. Long: 18-20pt. Very long: 16pt or split slides.
+passage = (
+    "Hi Maria!\n\n"
+    "I arrived in London last Tuesday. On Wednesday, I visited the British Museum "
+    "and walked along the Thames. It was really beautiful!\n\n"
+    "On Thursday, I tried fish and chips — I loved it! Yesterday, I shopped at "
+    "Camden Market and bought some souvenirs.\n\n"
+    "See you next week!\nAnna"
+)
+add_textbox(slide,
+    Inches(1.1), Inches(2.8), Inches(11.1), Inches(3.8),
+    text=passage, size=Pt(20), font=FONT_BODY, color=COLORS["body"])
 ```
 
-**Critical:** Reading passages are the most common case where the overriding fit rule applies. Shrink font to fit the full text. If the passage is too long for one slide even at 16 pt, split across slides with clear "continued" labels.
+**Critical:** Reading passages are the most common case where the overriding fit rule applies. Shrink font to fit. If text is too long even at 16 pt, split across slides with "continued" labels.
 
 ---
 
 ## 15. Review / Wrap-Up Slide
 
-**Purpose:** Summarise key takeaways. This is the LAST content slide — stays on screen as students pack up.
+**Purpose:** Summarise key takeaways + homework. LAST content slide — stays on screen.
+**Layout:** 6 — "Blank" (fully custom with dark background)
 
-```javascript
-// Dark background — mirrors title slide (bookend structure)
-slide.background = { color: COLORS.primary };
+```python
+slide = prs.slides.add_slide(prs.slide_layouts[6])
+set_slide_bg(slide, COLORS["primary"])
 
-// "What We Learned Today" label
-slide.addText("What We Learned Today", {
-  x: MARGIN, y: 0.25, w: 9.0, h: 0.5,
-  fontSize: 24, fontFace: FONTS.face, color: "A0BBDD", bold: true, align: "left"
-});
+# "What We Learned Today" header
+add_textbox(slide,
+    MARGIN, Inches(0.4), Inches(11.5), Inches(0.6),
+    text="What We Learned Today", size=SIZE_BODY, font=FONT_TITLE,
+    bold=True, color=RGBColor(0xA0, 0xBB, 0xDD))
 
-// Accent rule
-slide.addShape(pres.shapes.RECTANGLE, {
-  x: MARGIN, y: 0.8, w: 9.0, h: 0.04, fill: { color: COLORS.accent }
-});
+# Accent rule
+slide.shapes.add_shape(
+    MSO_SHAPE.RECTANGLE, MARGIN, Inches(1.05), Inches(11.5), Pt(3)
+).fill.solid()
+slide.shapes[-1].fill.fore_color.rgb = COLORS["accent"]
+slide.shapes[-1].line.fill.background()
 
-// Key takeaways
-slide.addText([
-  { text: "1. Past simple regular verbs: ", options: { bold: true, breakLine: false } },
-  { text: "add -ed to the base form (walk → walked, play → played)", options: { breakLine: true, breakLine: true } },
-  { text: "2. Negative: ", options: { bold: true, breakLine: false } },
-  { text: "didn't + base form (She didn't walk — NOT She didn't walked)", options: { breakLine: true, breakLine: true } },
-  { text: "3. Questions: ", options: { bold: true, breakLine: false } },
-  { text: "Did + subject + base form (Did you play? — NOT Did you played?)", options: { breakLine: true } },
-], {
-  x: MARGIN, y: 1.0, w: 9.0, h: 2.8,
-  fontSize: 22, fontFace: FONTS.face, color: "FFFFFF",
-  paraSpaceAfter: 18
-});
+# Key takeaways
+takeaways_box = slide.shapes.add_textbox(
+    MARGIN, Inches(1.3), Inches(11.5), Inches(3.5))
+tf = takeaways_box.text_frame
+tf.word_wrap = True
 
-// Homework
-slide.addText("HOMEWORK", {
-  x: MARGIN, y: 3.9, w: 9.0, h: 0.4,
-  fontSize: 20, fontFace: FONTS.face, color: "A0BBDD", bold: true
-});
+takeaways = [
+    ("1. Regular past simple: ", "add -ed (walk → walked, play → played)"),
+    ("2. Negative: ", "didn't + base form (NOT didn't walked)"),
+    ("3. Questions: ", "Did + subject + base form (NOT Did you played?)"),
+]
+for i, (label, detail) in enumerate(takeaways):
+    p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+    p.space_after = Pt(18)
+    add_run(p, label, size=Pt(22), font=FONT_BODY, bold=True, color=COLORS["white"])
+    add_run(p, detail, size=Pt(22), font=FONT_BODY, color=COLORS["white"])
 
-slide.addText("Workbook page 34, exercises 1–3. Write 5 sentences about your last holiday using past simple.", {
-  x: MARGIN, y: 4.3, w: 9.0, h: 0.8,
-  fontSize: 20, fontFace: FONTS.face, color: "CADCFC"
-});
+# Homework section
+add_textbox(slide,
+    MARGIN, Inches(5.2), Inches(11.5), Inches(0.4),
+    text="HOMEWORK", size=Pt(20), font=FONT_BODY,
+    bold=True, color=RGBColor(0xA0, 0xBB, 0xDD))
+
+add_textbox(slide,
+    MARGIN, Inches(5.65), Inches(11.5), Inches(1.0),
+    text="Workbook p. 34, exercises 1–3. Write 5 sentences about your last holiday.",
+    size=Pt(20), font=FONT_BODY, color=RGBColor(0xCA, 0xDC, 0xFC))
 ```
 
-**Do not follow this slide** with "Goodbye", a blank slide, or any other slide. This stays on screen.
+**Do not follow this slide** with "Goodbye", a blank slide, or anything else. It stays on screen.
 
 ---
 
 ## 16. Section Divider
 
 **Purpose:** Orient students when the lesson moves to a new phase. Use for decks > 15 slides.
+**Layout:** 2 — "Section Header"
 
-```javascript
-// Dark treatment
-slide.background = { color: "1A3A5C" };
+```python
+slide = prs.slides.add_slide(prs.slide_layouts[2])
 
-// Phase label
-slide.addText("Practice", {
-  x: MARGIN, y: 1.8, w: 9.0, h: 0.4,
-  fontSize: 16, fontFace: FONTS.face, color: "7BAFD4", bold: false, align: "left"
-});
+# Title (large, central)
+slide.placeholders[0].text = "Time to Practise!"
 
-// Section title
-slide.addText("Time to Practise!", {
-  x: MARGIN, y: 2.2, w: 9.0, h: 1.0,
-  fontSize: 36, fontFace: FONTS.face, color: "FFFFFF", bold: true, align: "left"
-});
-
-// Accent rule
-slide.addShape(pres.shapes.RECTANGLE, {
-  x: MARGIN, y: 3.3, w: 2.5, h: 0.06, fill: { color: COLORS.accent }
-});
+# Body text (below title)
+slide.placeholders[1].text = "Let's use IN, ON, and AT in exercises."
 ```
+
+For a dark-background divider, use Layout 6 "Blank" with `set_slide_bg()` and custom text boxes instead.
 
 ---
 
 ## 17. Breadcrumb Bar (optional, for longer lessons)
 
-A persistent header strip showing the current lesson phase. Add to every content slide for decks > 15 slides.
+A persistent header strip showing the current lesson phase. Add to content slides for decks > 15 slides.
 
-```javascript
-const phases = ["Warm-Up", "New Language", "Practice", "Production", "Review"];
-const currentPhase = "Practice";  // Changes per slide
+```python
+def add_breadcrumb(slide, current_phase):
+    """Add a breadcrumb bar to the top of a slide."""
+    phases = ["Warm-Up", "New Language", "Practice", "Production", "Review"]
 
-const barY = 0.0;
-const barH = 0.28;
+    bar_y = Inches(0)
+    bar_h = Inches(0.3)
+    phase_w = SLIDE_W / len(phases)
 
-// Background bar
-slide.addShape(pres.shapes.RECTANGLE, {
-  x: 0, y: barY, w: 10, h: barH,
-  fill: { color: "F0F4F8" }, line: { color: "F0F4F8" }
-});
+    # Background strip
+    bg_bar = slide.shapes.add_shape(
+        MSO_SHAPE.RECTANGLE, Inches(0), bar_y, SLIDE_W, bar_h)
+    bg_bar.fill.solid()
+    bg_bar.fill.fore_color.rgb = RGBColor(0xF0, 0xF4, 0xF8)
+    bg_bar.line.fill.background()
 
-// Phase labels
-const phaseW = 10 / phases.length;
-phases.forEach((phase, i) => {
-  const isActive = phase === currentPhase;
-  slide.addText(phase, {
-    x: i * phaseW, y: barY, w: phaseW, h: barH,
-    fontSize: 10, fontFace: FONTS.face,
-    color: isActive ? COLORS.accent : COLORS.muted,
-    bold: isActive,
-    align: "center", valign: "middle"
-  });
-  if (isActive) {
-    slide.addShape(pres.shapes.RECTANGLE, {
-      x: i * phaseW + phaseW * 0.1, y: barY + barH - 0.04, w: phaseW * 0.8, h: 0.04,
-      fill: { color: COLORS.accent }
-    });
-  }
-});
+    for i, phase in enumerate(phases):
+        is_active = (phase == current_phase)
+        tb = slide.shapes.add_textbox(
+            int(i * phase_w), bar_y, int(phase_w), bar_h)
+        p = tb.text_frame.paragraphs[0]
+        p.alignment = PP_ALIGN.CENTER
+        add_run(p, phase, size=Pt(10), font=FONT_BODY,
+                bold=is_active,
+                color=COLORS["accent"] if is_active else COLORS["muted"])
 
-// Shift all other content down by barH to avoid collision
+        if is_active:
+            indicator = slide.shapes.add_shape(
+                MSO_SHAPE.RECTANGLE,
+                int(i * phase_w + phase_w * 0.1),
+                bar_y + bar_h - Pt(4),
+                int(phase_w * 0.8),
+                Pt(4))
+            indicator.fill.solid()
+            indicator.fill.fore_color.rgb = COLORS["accent"]
+            indicator.line.fill.background()
 ```
 
 ---
@@ -918,17 +939,19 @@ phases.forEach((phase, i) => {
 ## Quick Checks Before Use
 
 ```
+□ Template loaded: Presentation.pptx used as base (not blank Presentation())
+□ Blank placeholder slide removed before adding content
 □ Title slide: lesson topic, date, learning objective, class info
-□ Every slide: clear purpose title
-□ Lesson flow test: titles tell the progression from warm-up → input → practice → production → review
+□ Every slide: clear purpose title using the correct layout
+□ Lesson flow test: titles tell the progression warm-up → input → practice → production → review
 □ Exercise slides: written instructions present
-□ Vocabulary slides: image + word + definition + example sentence
+□ Vocabulary slides: word + definition + example sentence (image if available)
 □ Grammar slides: rule in callout box, colour-coded examples
-□ Grammar colours: consistent throughout (verbs = red, nouns = blue, etc.)
-□ Text enhancements: bold/italic/underline/caps used per §5 conventions consistently
-□ Content fits: no text overflows any slide
-□ Font sizes: target ≥ 24 pt body, reduced only when content requires it
+□ Grammar colours: consistent throughout (verbs=red, nouns=blue, adj=green, adv=purple, prep=orange)
+□ Text enhancements: bold/italic/underline/caps used per content_guidelines.md §5 consistently
+□ Content fits: no text overflows any slide (font sizes are targets, not limits)
 □ Word banks: included on exercise slides for A1–A2 levels
 □ Wrap-up slide: last content slide, key takeaways + homework
 □ No decorative images — every image supports learning
+□ Saved as .pptx with descriptive filename
 ```
