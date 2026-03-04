@@ -1,16 +1,16 @@
 ---
-name: academic-pptx
-description: "Use this skill whenever the user wants to create or improve a presentation for an academic context — conference papers, seminar talks, thesis defenses, grant briefings, lab meetings, invited lectures, or any presentation where the audience will evaluate reasoning and evidence. Triggers include: 'conference talk', 'seminar slides', 'thesis defense', 'research presentation', 'academic deck', 'academic presentation'. Also triggers when the user asks to 'make slides' in combination with academic content (e.g., 'make slides for my paper on X', 'create a presentation for my dissertation defense', 'build a deck for my grant proposal'). This skill governs CONTENT and STRUCTURE decisions. For the technical work of creating or editing the .pptx file itself, also read the pptx SKILL.md."
+name: esl-classroom-pptx
+description: "Use this skill whenever the user wants to create or improve a presentation for an ESL (English as a Second Language) classroom context — grammar lessons, vocabulary presentations, reading/listening activities, speaking/discussion tasks, culture topics, review sessions, or any lesson where secondary school students will learn and practise English. Triggers include: 'ESL lesson', 'grammar presentation', 'vocabulary slides', 'classroom activity', 'English lesson', 'language class', 'teaching slides', 'EFL lesson'. Also triggers when the user asks to 'make slides for my lesson on X', 'create a presentation for teaching Y', 'build slides for my English class'. This skill governs CONTENT and STRUCTURE decisions. For the technical work of creating or editing the .pptx file itself, also read the pptx SKILL.md."
 license: Proprietary. LICENSE.txt has complete terms
 ---
 
-# Academic Presentations Skill
+# ESL Classroom Presentations Skill
 
 ## How This Skill Works
 
 This skill has two layers:
 
-1. **This file** — governs content, argument structure, and design standards for academic presentations. Read it fully before planning any slides.
+1. **This file** — governs content, lesson structure, and design standards for ESL classroom presentations. Read it fully before planning any slides.
 2. **PPTX skill** — governs the technical implementation (creating, editing, and QA-ing the .pptx file). Read it too.
 
 **Always read both before writing any code or creating any files.**
@@ -21,84 +21,109 @@ This skill has two layers:
 
 | Task | Guide |
 |------|-------|
-| Content planning, argument structure, slide-by-slide rules | [content_guidelines.md](content_guidelines.md) |
-| Per-slide-type patterns (title, methods, results, etc.) | [slide_patterns.md](slide_patterns.md) |
+| Lesson structure, slide sequence, text/exercise rules, text enhancement conventions | [content_guidelines.md](content_guidelines.md) |
+| Per-slide-type patterns (title, vocabulary, grammar, exercises, etc.) | [slide_patterns.md](slide_patterns.md) |
 | Technical creation from scratch | PPTX skill → `pptxgenjs.md` |
 | Technical editing of an existing file | PPTX skill → `editing.md` |
 
 ---
 
-## Step 1: Identify Presentation Type
+## Step 1: Identify Lesson Type
 
-Before planning a single slide, determine which mode applies.
+Before planning a single slide, determine which type applies.
 
-### Structured Argument (default for academic work)
+### Grammar Lesson (default when unclear)
 
-Use for: conference papers, seminar talks, thesis defenses, dissertation chapters, grant briefings, internal lab presentations, policy briefings, consulting-style research deliverables.
+Use for: teaching verb tenses, sentence structure, parts of speech, word order, conditionals, reported speech, articles, prepositions, etc.
 
-**Priority order: argument structure → data → layout → aesthetics.**
+**Priority order: clear explanation → guided practice → free production → layout → aesthetics.**
 
-Follow [content_guidelines.md](content_guidelines.md) in full.
+### Vocabulary Lesson
 
-### Visual / Narrative
+Use for: introducing and practising new words/phrases around a theme (weather, food, travel, jobs, emotions, etc.).
 
-Use for: public engagement talks, science communication to non-specialist audiences, funding pitches to lay panels, event keynotes.
+### Skills Lesson
 
-Follow the PPTX skill's design-forward guidelines. Argument structure still matters, but visual storytelling and emotional engagement take priority.
+Use for: reading comprehension, listening activities, writing workshops, speaking/pronunciation practice.
 
-### When in doubt
+### Culture / Topic Lesson
 
-Default to **Structured Argument**. If the user mentions a paper, a study, a dataset, a thesis, a grant, or a conference, they almost certainly want structured argument mode.
+Use for: content-based lessons (festivals, countries, current events), visual-heavy, discussion-driven.
+
+### Review / Test Prep
+
+Use for: consolidation, mixed exercises, error correction, exam-format practice.
+
+### Mixed
+
+Use for: lessons combining multiple types. Common in real classrooms.
+
+Follow [content_guidelines.md](content_guidelines.md) in full for all lesson types.
 
 ---
 
 ## Step 2: Plan the Deck Before Creating Any Slides
 
-Produce a slide-by-slide outline (title, action title, exhibit type) and confirm with the user if the deck is more than 10 slides or if the content is complex. Do not start building until the outline is agreed.
+Produce a slide-by-slide outline (title, purpose, content type, exercise format if applicable) and confirm with the user if the deck is more than 10 slides or if the content is complex. Do not start building until the outline is agreed.
 
-Use the ghost deck test during planning: read only the proposed action titles in sequence. They must tell the complete argument. If they don't, fix the outline before building.
+Use the **lesson flow test** during planning: read only the proposed slide titles in sequence. They must tell the complete lesson progression — from warm-up through new language input, practice, production, and review. If they don't, fix the outline before building.
 
 ---
 
 ## Step 3: Apply Design Standards
 
-Academic presentations use **communication-first design**. These rules override the PPTX skill's design-forward defaults.
+ESL classroom presentations use **clarity-first design** optimised for a large TV screen viewed by up to 35 students, including those at the back of the room.
+
+### OVERRIDING RULE: Content Must Fit
+
+**Font size guidelines throughout this skill are TARGETS, not hard limits.** The highest-priority rule is:
+
+> All content the teacher requests must appear on the slide without overflowing, being cut off, or extending beyond slide boundaries.
+
+If content won't fit at the target font size:
+1. **First**: reduce font size (use judgment — going from 24 pt to 20 pt is acceptable)
+2. **If still too small to read**: split the content across multiple slides
+3. **Never**: let text overflow, get truncated, or extend beyond the slide edge
+
+The teacher's content always takes priority over font size targets.
+
+### Typography
+
+Target sizes, optimised for a 75" TV viewed from the back of a classroom:
+
+| Element | Target Size | Weight |
+|---------|------------|--------|
+| Slide title | 32 pt | Bold |
+| Section header | 26 pt | Bold |
+| Body / instructions | 24 pt | Regular |
+| Key vocabulary words | 32–36 pt | Bold |
+| Exercise content | 24–28 pt | Regular |
+| Labels / attribution | 14–16 pt | Regular, muted color |
+
+Single font face (Arial, Calibri, or Helvetica — confirm with user). Use size and weight for hierarchy — never multiple typefaces.
 
 ### Color
 
 - White background for all content slides.
-- One sans-serif font throughout (Arial, Calibri, or Helvetica — confirm with user or match their institution's template if provided).
-- Maximum three colors: one primary, one accent, one for emphasis or alerts. Default: dark navy primary (`1F4E79`), mid-blue accent (`2E75B6`), white or off-white background.
-- No decorative color gradients, no themed color palettes unless the user explicitly requests them.
-- Use color to **direct attention** — highlight the key finding on a chart, mark a callout box — not for decoration.
-
-### Typography
-
-| Element | Size | Weight |
-|---------|------|--------|
-| Action title | 24–28 pt | Bold |
-| Section header | 20–22 pt | Bold |
-| Body bullets | 20 pt | Regular |
-| Chart labels / annotations | 16–18 pt | Regular |
-| Source citations on slides | 12–14 pt | Regular, muted color |
-
-Single font face. Use size and weight for hierarchy — never multiple typefaces.
+- Maximum three base colours: one primary, one accent, one for emphasis.
+- **Grammar colour coding** is an additional layer on top of the base palette — see [content_guidelines.md §5](content_guidelines.md) for the full scheme.
+- Use colour to **support learning** — highlight target structures, distinguish parts of speech — not for decoration.
+- No decorative colour gradients or themed palettes unless explicitly requested.
 
 ### Layout
 
-- Left-align all body text. Center only slide titles and axis labels.
-- Consistent grid: all text boxes and figures align to the same margins (minimum 0.5" from slide edges).
-- For result slides: figure on the left, interpretive bullets on the right. This matches natural left-to-right reading.
-- White space is a signal of analytical clarity — do not fill every inch.
-- 16:9 widescreen is the default. Confirm with the user if they know the venue's aspect ratio.
+- Left-align all body text. Centre only slide titles if desired.
+- Consistent grid: all text boxes align to the same margins (minimum 0.5" from slide edges).
+- For vocabulary slides: image on the left, word/definition/example on the right.
+- White space helps students focus — do not fill every inch.
+- 16:9 widescreen is the default.
 
-### Avoid (Academic-Specific)
+### What to Avoid
 
-- **No decorative icons** — icons in colored circles, stock images, clip art are inappropriate for analytical academic presentations.
+- **No decorative icons or clip art** — images must support vocabulary/concepts, not decorate.
+- **No teacher narration on slides** — only include text students need to read or interact with (instructions, examples, exercises, key language).
 - **No accent lines under titles** — use whitespace instead.
-- **No color palettes chosen for aesthetic interest** — use institution colors or the minimal defaults above.
 - **No full-bleed background images on content slides** — reserve for title/section dividers only if desired.
-- **No text-heavy slides** — if the audience is reading, they are not listening. Maximum ~40 words of body text per content slide.
 
 ---
 
@@ -109,37 +134,39 @@ Follow the PPTX skill's QA procedure in full, including:
 - Visual QA via slide images (subagents if available)
 - Fix-and-verify loop until a full pass reveals no new issues
 
-**Additionally, run the academic-specific checks:**
+**Additionally, run the ESL classroom checks:**
 
 ```
-Academic QA checklist:
-□ Every content slide has an action title (complete sentence stating the takeaway)
-□ Ghost deck test passes (action titles alone tell the full argument)
-□ One exhibit per results slide; each exhibit has a "so what" annotation
-□ Every borrowed figure or data point has an in-slide citation
-□ A References slide exists at the end
-□ Conclusions slide is the last non-appendix slide (not "Thank You" or a blank)
-□ Contact information and/or QR code/link on the final slide
-□ Font sizes are readable from the back of a room (≥ 20 pt body text)
-□ No decorative elements that don't carry content
+ESL Classroom QA Checklist:
+□ Every slide has a clear purpose (learning target, instruction, content, or exercise)
+□ Lesson flow test: slide titles tell the progression from warm-up to wrap-up
+□ One exercise or visual focus per slide
+□ Grammar colour coding is consistent throughout the deck (same colour = same part of speech)
+□ Text enhancement conventions (bold, italic, underline, ALL CAPS) applied consistently per §5 rules
+□ Written instructions are present on every exercise slide
+□ Font sizes are readable on TV from back row (target ≥ 24 pt body)
+□ No content overflows any slide — the overriding rule is satisfied
+□ Images support vocabulary/concepts (not decorative)
+□ Wrap-up slide is the last content slide (key takeaways + homework)
 □ Section dividers or breadcrumb bar present for decks > 15 slides
+□ Language level of instructions matches the students' proficiency
 ```
 
 ---
 
 ## Key Principles (Summary)
 
-**Action titles, not topic labels.** Every slide title is a complete sentence stating the takeaway. Reading titles alone should tell the whole argument (ghost deck test).
+**Clear purpose per slide.** Every slide has one job: teach a point, present an exercise, model language, or review. If a slide is doing two things, split it.
 
-**One argument, made well.** Don't present your whole paper. Pick the claim that can be made convincingly in the allotted time. Everything else goes in the appendix.
+**Slides carry the lesson.** ESL classroom slides are what students read and interact with. Text on the slide IS the learning content — instructions, examples, exercises, and key language. This is different from academic presentations where slides merely support the speaker.
 
-**One insight per slide.** One exhibit per results slide. Highlight the key finding directly on the chart — don't make the audience hunt for it.
+**Content never overflows.** Font size targets exist for readability, but the overriding rule is that all requested content fits on the slide. Shrink or split as needed.
 
-**Slides support speech; they don't replace it.** Body text is for orientation, not information transfer. The presenter carries the argument; the slide carries the evidence.
+**Text enhancements are teaching tools.** Bold, italic, underline, ALL CAPS, and grammar colour coding all have specific pedagogical meanings (see content_guidelines.md §5). Apply them consistently and deliberately — never for decoration.
 
-**Cite everything borrowed.** Academic integrity applies to slides. In-text citations on the slide, full references on the References slide.
+**One focus per slide.** One exercise, one grammar point, one vocabulary set, one reading passage. Keep it clean.
 
-**End on conclusions.** The conclusions slide stays on screen during Q&A. Never end on "Thank You" or a blank slide.
+**Language must be level-appropriate.** Instructions and content match the students' English proficiency. Simpler structures and vocabulary for lower levels; more complex for higher levels.
 
 ---
 

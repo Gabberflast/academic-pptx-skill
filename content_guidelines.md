@@ -1,229 +1,312 @@
-# Academic Presentation Content Guidelines
+# ESL Classroom Content Guidelines
 
-## 1. Argument Structure
+## 1. Lesson Structure
 
-### Lead with the research question
-State the central question or claim explicitly — in slides 2 or 3 at the latest. The audience needs it to evaluate everything that follows. Do not bury it.
+### Default: PPP (Presentation → Practice → Production)
 
-### Use a proven narrative spine
-Choose one and apply it consistently:
+Unless the teacher specifies otherwise, structure every lesson deck using PPP:
 
-**Option A — Situation / Complication / Resolution (SCR)**
-- Situation: what was known or established
-- Complication: what was missing, broken, contested, or unexplained
-- Resolution: what your work contributes
+**Presentation** — Teacher-led input of new language
+- Introduce the grammar rule, vocabulary set, or language model
+- Use clear examples, visuals, and colour-coded grammar where appropriate
+- Keep it focused: one grammar point or one vocabulary theme per lesson
 
-**Option B — Funnel + Answer**
-- Broad context → specific gap → your approach → key findings → implications
+**Practice** — Controlled and guided exercises
+- Students apply the new language in structured activities
+- Fill-in-the-blank, matching, multiple choice, error correction
+- Move from more controlled (gap fills) to less controlled (sentence completion)
 
-**Option C — Answer First (for senior/time-pressured audiences)**
-- Lead with the conclusion, then support it
-- Useful for grant panels, advisory boards, and short talks where the audience may not stay for the full argument
+**Production** — Freer practice
+- Students use the target language in communicative tasks
+- Discussion prompts with sentence frames, writing tasks, role-play setups
+- The teacher monitors; the students produce
 
-### One argument per presentation
-Researchers frequently try to present the whole paper. Resist this. Choose the claim that can be made convincingly in the available time. Everything else belongs in the appendix.
+### Alternative: Task-Based Learning (TBL)
+
+Use when the teacher requests it:
+- Set up a communicative task (problem to solve, information to exchange)
+- Students do the task using whatever language they can
+- Debrief: teacher draws attention to target language that emerged
+
+### Flexible / Mixed
+
+Many real lessons combine approaches. If the user doesn't specify, default to PPP and confirm.
 
 ### Each slide has one job
-Every slide should have a single, clearly defined role in the argument. If a slide is doing two things, split it.
+
+Every slide should have a single, clearly defined role in the lesson. If a slide is doing two things (e.g., teaching a grammar rule AND running an exercise), split it.
 
 ### Flow test
-After outlining, read slide titles in order. Each should make the next one feel like a natural consequence. If a slide feels disconnected or could appear anywhere in the sequence without loss, it is either misplaced or dispensable.
+
+After outlining, read slide titles in order. Each should make the next one feel like a natural step in the lesson. The progression should clearly move from warm-up → input → practice → production → review.
 
 ---
 
-## 2. Action Titles
+## 2. Slide Purpose Titles
 
-The most important formatting rule. Every content slide title must be a complete sentence stating the takeaway — the "so what" — not a topic label.
+Every slide needs a clear title that tells students (and the teacher) what the slide is for. These are not academic "action titles" stating a research takeaway — they are **purpose labels** that orient the class.
 
-| Instead of (topic label) | Use (action title) |
-|--------------------------|-------------------|
-| Results | Treatment effect is significant across all three cohorts |
-| Literature Review | Prior work leaves the causal mechanism unexplained |
-| Data | Dataset covers 40 years of county-level panel data |
-| Methodology | Regression discontinuity exploits a sharp funding threshold |
-| Discussion | Effect persists after controlling for selection and attrition |
+### Title types
 
-**Ghost deck test:** Read only the action titles in sequence. They should tell the complete argument. If they don't, the deck's logic needs repair — fix the titles and/or restructure before building.
+| Slide Purpose | Example Title |
+|--------------|---------------|
+| Learning target | "Today: Past Simple — Regular Verbs" |
+| Exercise instruction | "Fill in the Blank — Use the Correct Past Tense" |
+| Content / input | "Weather Vocabulary" |
+| Grammar rule | "Comparing Adjectives: -er / more + adjective" |
+| Activity | "Pair Discussion — What did you do last weekend?" |
+| Warm-up | "Warm-Up: What's the Weather Like Today?" |
+| Review | "Key Points — What We Learned Today" |
+| Error correction | "Find and Fix the Mistakes" |
 
-**Title length:** One to two lines. If more is needed, the point is not sharp enough yet.
+### Title guidelines
 
-**Title font:** 24–28 pt, bold. Action titles must be immediately readable, including from the back of the room.
+- **Length:** one line preferred, two lines maximum. Keep it scannable.
+- **Font:** 32 pt bold target (may be reduced if the title is unusually long — content must fit).
+- **Clarity over cleverness:** students should instantly understand what they need to do or focus on.
+
+### Lesson flow test
+
+Read only the slide titles in sequence. They should tell the complete lesson progression:
+1. What are we learning today?
+2. Here's the warm-up.
+3. Here's the new language.
+4. Now practise it.
+5. Now use it freely.
+6. Here's what we learned.
+
+If the titles don't tell this story, fix the outline before building.
 
 ---
 
-## 3. Exhibit Discipline
+## 3. Visual and Exercise Discipline
 
-### One exhibit per slide
-One chart, table, diagram, equation block, or map per slide. If you need two charts to make a point, consider whether they are really one comparison (which can be combined) or two separate points (which need two slides).
+### One focus per slide
 
-### Every exhibit must earn its place
-The exhibit must directly support the action title. Test: cover the exhibit and read the title — does the title still make sense without it? If yes, the exhibit isn't necessary. Cover the title and look at the exhibit — is the takeaway obvious? If not, you need a stronger annotation or a clearer action title.
+One exercise, one vocabulary set, one grammar rule, one reading passage, or one discussion prompt per slide. If a slide is doing two things, split it.
 
-### Annotate the key finding on the chart
-Do not make the audience search. Mark the key data point, bar, line, or cell with:
-- A call-out arrow or label
-- A highlighted/shaded region
-- A text annotation box ("↑ 23% above baseline")
-- A different colour for the focal series
+### Images support learning
 
-This is especially important for large rooms where the screen may be far away.
+Every image on a slide must serve a pedagogical purpose:
+- Illustrating vocabulary (showing what "umbrella" looks like)
+- Providing context for a reading/listening task
+- Setting up a discussion topic
 
-### Self-sufficient slide test
-Ask: could someone understand the key point from this slide without hearing the narration? If no, add an annotation. The slide will also be read as a handout or shared as a PDF; it should communicate without a presenter attached.
+No decorative images, stock photos, or clip art that don't directly support comprehension.
 
-### Figure placement
-Place figures on the **left side** of the slide. Interpretive bullets or discussion text go on the **right**. This matches natural left-to-right reading order: evidence first, interpretation second.
+### Exercise slide layout
 
-### Prefer graphs over tables for results
-Tables require more cognitive load to parse quickly under time pressure. Use a graph when showing a trend, comparison, or distribution. Reserve tables for precise numerical comparisons where the exact values matter.
+For exercise slides, follow this consistent structure:
+1. **Title** — states the exercise type and instruction (top)
+2. **Exercise content** — the questions, sentences, or items (body)
+3. **Word bank / options** — if applicable, clearly separated at the bottom or in a callout box
 
-### Rebuild figures from your paper
-Do not copy figures directly from a PDF. Paper figures are typically too small, use print-resolution fonts, and have captions that will not render well on screen. Rebuild them at presentation resolution with larger fonts (≥ 16 pt for axis labels).
+### Vocabulary slide layout
 
-### Don't include exhibits you won't discuss
-If you include it, discuss it. If you won't have time to discuss it, move it to the appendix.
+**Single focus (one word per slide):**
+- Image on the left (~40% of slide width)
+- Word (large, 32–36 pt), definition, and example sentence on the right
+
+**Grouped (4–6 words per slide):**
+- Words listed or arranged in a grid with small images/icons
+- Thematic grouping (all weather words, all food words, etc.)
+- Each word with a brief definition or translation equivalent
+
+### Tables and comparisons
+
+Use comparison tables for:
+- Grammar forms side by side (present simple vs. present continuous)
+- Vocabulary categories (countable vs. uncountable nouns)
+- Verb conjugations
+
+Keep tables clean: clear headers, consistent column widths, adequate row height for readability.
 
 ---
 
 ## 4. Text Discipline
 
-### Maximum body text: ~40 words per slide
-If you find yourself writing more, either (a) the slide is doing too much and should be split, or (b) the material belongs in an appendix or handout.
+### OVERRIDING RULE: Content must fit
 
-### Bullets are orientation cues, not information transfer
-Each bullet should contain one idea. Three to five bullets per slide is typical. More than five is a warning sign.
+Font size guidelines are **targets, not hard limits**. The highest-priority rule is that all content the teacher requests must appear on the slide without overflowing.
 
-### Telegraphic language is acceptable
-Omit articles and filler phrases where meaning is preserved.
-- Instead of: "Our study found that the intervention reduced costs significantly."
-- Use: "Intervention reduced costs by 23% (p < 0.01)"
+If content won't fit at the target font size:
+1. Reduce font size (24 pt → 20 pt is acceptable; going below 18 pt should trigger a split)
+2. If still too small: split across multiple slides
+3. Never let text overflow, get cut off, or extend beyond slide boundaries
 
-### Body font: 20 pt minimum
-This is a floor, not a target. If text must be smaller than 20 pt to fit on the slide, remove content until it fits at 20 pt.
+### Target sizes
 
-### Use bold and italics sparingly
-Bold for key terms on first introduction, for inline labels ("Note:", "Limitation:"), and for the focal finding. Italics for statistical notation, species names, book titles. Not for decoration.
+- Body text / instructions: 24 pt
+- Exercise content: 24–28 pt
+- Key vocabulary words: 32–36 pt
+- Labels / attribution: 14–16 pt
+
+### What belongs on the slide
+
+Only include text students need to **read or interact with**:
+- Written instructions for exercises
+- Example sentences and model language
+- Exercise items (questions, blanks, options)
+- Key vocabulary with definitions
+- Grammar rules and patterns
+- Sentence frames and starters
+- Discussion prompts
+
+### What does NOT belong on the slide
+
+- Teacher narration or talking points (deliver these verbally)
+- Long explanations that could be said aloud
+- Paragraphs of background context the teacher will explain
+
+### Telegraphic language in instructions
+
+Keep instructions concise. Telegraphic phrasing is fine:
+- Instead of: "Please look at each sentence below and fill in each of the blanks with the correct form of the verb in brackets."
+- Use: "Fill in the blank with the correct verb form."
 
 ---
 
-## 5. Citations and Attribution
+## 5. Text Enhancement Conventions
 
-### Cite on the slide
-Every claim, figure, or dataset that is not your own original work must be cited on the slide where it appears. Place the citation at the bottom of the slide in a smaller muted font (12–14 pt).
+Text formatting in ESL slides is a **deliberate teaching tool**. Every use of bold, italic, underline, ALL CAPS, and colour coding has a specific meaning. Apply these consistently throughout the entire deck.
 
-Use your field's standard format:
-- Sciences / social sciences: (Author, Year) parenthetical
-- Humanities: footnote-style or superscript number
-- Be consistent throughout the deck
+### Grammar Colour Coding
 
-### Oral attribution
-Introduce sources verbally before the citation appears: "Smith and colleagues found in 2022 that…" — don't silently flash a parenthetical.
+Default colour scheme for parts of speech. Apply when teaching grammar, highlighting target structures, or when the teacher requests colour-coded language.
 
-### Figures from published sources
-- Attribution caption directly beneath the figure (e.g., "Source: Jones et al., 2021, Fig. 3")
-- Full reference on the References slide
-- Note: reproducing a figure from a published paper may require publisher permission. For conference presentation, this is typically covered by fair use; check if in doubt.
+| Part of Speech | Colour | Hex Code |
+|---------------|--------|----------|
+| Verbs | Red | `C0392B` |
+| Nouns | Blue | `2E75B6` |
+| Adjectives | Green | `27AE60` |
+| Adverbs | Purple | `8E44AD` |
+| Prepositions | Orange | `E67E22` |
 
-### References slide
-The last slide before the appendix must be a References slide listing complete citations for every source cited in the deck. Format consistently with your field's conventions.
+**When to apply:**
+- Teaching parts of speech explicitly
+- Highlighting the target structure in example sentences
+- Grammar exercises where students need to identify word types
+- The teacher specifies colour-coded grammar
+
+**When NOT to apply:**
+- Vocabulary-only slides where grammar isn't the focus
+- Free production/discussion slides
+- When the teacher says not to
+
+**Single target structure:** The teacher may specify one colour for "the target grammar" (e.g., "highlight all present perfect forms in red"). Use the specified colour for the target structure only.
+
+**Overridable:** The teacher can specify a different colour scheme at any time. These are defaults.
+
+### Word-Level Text Enhancements
+
+These styles are applied at the **word level**, not to entire sentences.
+
+| Style | Meaning | When to Use | Example |
+|-------|---------|-------------|---------|
+| **Bold** | Focus word, key meaning, action word in instructions | Key terms, grammar points, instruction verbs | "Use the **present perfect**" / "**Circle** the correct answer" |
+| *Italics* | Supplementary info, softer emphasis, side notes | Clarifications, grammar term names, optional info | "(*also called the past participle*)" |
+| Underline | Stress, pronunciation focus, "look here" | Syllable stress, error location, attention focus | "She doesn't like coffee" (stress on contracted form) |
+| ALL CAPS | Rules, section labels, high-priority alerts | Important grammar rules, slide section headers, warnings | "RULE: Always use HAVE/HAS + past participle" / "PRACTICE" |
+
+### Consistency is mandatory
+
+- If **bold** marks target vocabulary on slide 4, it must mark target vocabulary on all slides.
+- If verbs are red on slide 6, they must be red on every slide that uses grammar colour coding.
+- If ALL CAPS marks rules on slide 8, it must mark rules throughout.
+
+Do not mix conventions. If you use bold for one purpose on one slide and a different purpose on another, the deck fails the QA check.
 
 ---
 
 ## 6. Deck Architecture
 
-Required slides for a complete academic presentation, in order:
+Required slides for a complete ESL lesson, in order:
 
-### Title slide
-- Full presentation title (framed as a statement or question — not just a topic)
-- Author name(s) and affiliations
-- Conference / venue / event name
+### Title Slide
+- Lesson topic (prominent)
 - Date
+- Learning objective (brief — e.g., "Today: Past Simple — Regular Verbs")
+- Teacher name and class/period (optional)
 
-### Motivation / Context (1–2 slides)
-- Why does this problem matter?
-- Connect to a real gap, unresolved question, or consequential puzzle in the literature
-- This is the "Situation" and "Complication" in the SCR framework
+### Learning Objective (optional standalone — 1 slide)
+- "Today we will..." with a clear, measurable target
+- 2–3 sub-objectives if the lesson has multiple components
+- Use a callout box to make the objective prominent
+- Some teachers prefer this on the title slide; others want it standalone. Ask if unclear.
 
-### Research Question or Hypothesis (1 slide)
-- State it explicitly and precisely
-- This slide must exist. Do not embed the research question in a motivation slide; give it its own slide so the audience can orient
+### Warm-Up / Do Now (1–2 slides)
+- Quick review of previous lesson or engaging opener
+- Can be: a question, an image prompt, a short exercise, a quick quiz
+- Gets students thinking in English immediately
+- Should connect to today's lesson topic
 
-### Methods (1–2 slides)
-- Cover only what the audience needs to evaluate your findings
-- Procedural detail that doesn't affect interpretability belongs in the appendix
-- For quantitative work: identification strategy, sample, key variables
-- For qualitative work: data sources, analytical approach, evidence standards
+### Presentation Phase (3–5 slides)
+- New language input: grammar rule, vocabulary introduction, model text or dialogue
+- Grammar rules in highlighted callout boxes
+- Vocabulary with images and example sentences
+- Model dialogues or text passages
+- Grammar colour coding applied where appropriate
 
-### Results (as many slides as needed, one finding per slide)
-- One exhibit per slide
-- Action title states the finding
-- Key result annotated directly on the chart/table
+### Practice Phase (4–6 slides)
+- Guided exercises using the new language
+- Move from more controlled to less controlled:
+  1. Fill-in-the-blank (most controlled)
+  2. Multiple choice
+  3. Matching
+  4. Error correction
+  5. Sentence completion (less controlled)
+- Every exercise slide has written instructions
+- Word banks provided for lower proficiency levels
 
-### Discussion / Implications (1–2 slides)
-- Interpret the findings
-- Connect back to the research question from the opening
-- Address the main limitation(s) directly — pre-empt the audience's objection
+### Production Phase (2–3 slides)
+- Freer practice: students use target language in communicative contexts
+- Discussion prompts with sentence frames/starters
+- Writing tasks with models
+- Role-play setups with key phrases
+- Pair/group activity instructions
 
-### Conclusions (1 slide)
-- 2–4 bullet points restating the key takeaways
-- **This slide stays on screen during Q&A. It is the last slide the audience sees.**
-- Do NOT follow it with "Thank You" or a blank slide
-
-### Contact / Next Steps (on conclusions slide or a final standalone slide)
-- Email address or affiliation URL
-- QR code or shortened URL linking to slides, preprint, or working paper
-- "Work in progress — feedback welcome" if appropriate
-
-### References
-- Complete citations for all sources cited in the deck
-
-### Appendix (clearly labeled)
-- Pre-built Q&A slides anticipating likely audience questions
-- Methodological robustness checks and sensitivity analyses
-- Additional data, figures, or tables that didn't fit the main narrative
-- Detailed derivations or proofs
-- Label each appendix slide clearly (e.g., "Appendix A: Robustness Checks")
-
----
-
-## 7. Timing and Slot Management
-
-### Slide budget
-Maximum one slide per minute. Typical budgets:
-- 10-minute talk: 8–10 content slides (title + references excluded)
-- 15-minute talk: 12–14 content slides
-- 20-minute talk: 15–18 content slides
-- 45-minute seminar: 30–40 slides (with more time per slide for discussion)
-
-### Practice rule
-Rehearse out loud and to time. Target finishing **1–2 minutes under** the allotted time. Nerves and audience interactions reliably add time on the day. Exceeding the time limit at an academic conference is a significant professional misstep — sessions run to a strict schedule.
-
-### Know what to cut
-Identify in advance which slides to skip if time is running short. Mark them with a small indicator in the corner. Prioritise the research question, key result, and conclusions; methods and context are typically the first to compress.
-
-### Q&A preparation
-- Anticipate the 3–5 most likely questions
-- Pre-build appendix slides for each
-- Common questions: "Why not use X method?", "How does this compare to Y?", "What about the endogeneity concern?", "Is the sample representative?"
-
-### End on the conclusions slide
-When you say "I'll stop there," the conclusions slide should already be on screen. Invite questions: "Are there questions or feedback?" (not just "Any questions?" — the broader framing invites more substantive engagement).
+### Review / Wrap-Up (1–2 slides)
+- Key takeaways: 2–4 bullet points summarising what was learned
+- Homework assignment (if any)
+- **This is the LAST content slide. It stays on screen as students pack up.**
+- Do NOT follow with a blank slide or decorative "goodbye" slide.
 
 ---
 
-## 8. International and Accessibility Considerations
+## 7. Timing and Period Management
 
-### For international audiences
-- Avoid idioms, colloquialisms, and culturally specific humour
-- Define acronyms and abbreviations on first use, even obvious ones
-- Speak more slowly than feels natural
-- Use plain, direct sentence structures
+### Slide budgets
 
-### Accessibility basics
-- Minimum 20 pt body text; 24 pt+ titles
-- High contrast between text and background (dark text on white, or white on dark)
-- Do not rely on colour alone to convey meaning (use labels, patterns, or shapes as well)
-- Provide alt text on figures if the slides will be circulated as a PDF
+Typical: 15–25 slides per lesson. Scale to period length:
+
+| Period Length | Approximate Slides |
+|-------------|-------------------|
+| 40–45 minutes | 12–18 slides |
+| 50–55 minutes | 15–22 slides |
+| 80–90 minutes (block) | 25–35 slides |
+
+These are guidelines. Some slides (exercises) will stay on screen for 5+ minutes while students work. Others (title, warm-up) may be on screen for under a minute.
+
+### Ask the user
+
+If the user doesn't specify period length, ask. If they can't say, default to 50 minutes.
+
+### Pacing notes
+
+- Vocabulary slides: 2–3 minutes each (presentation) or 30 seconds each (quick review)
+- Exercise slides: 3–7 minutes each (students need time to work)
+- Discussion slides: 5–10 minutes (pair/group work takes time)
+- Grammar rule slides: 2–4 minutes (teacher explains, students absorb)
+
+---
+
+## 8. Attribution
+
+Simplified compared to academic standards:
+- If images are from external sources, add attribution in small muted text (14 pt) at the bottom of the slide.
+- If a reading passage is from a published source, note the source.
+- No formal References slide is required unless the teacher wants one.
+- Format: "Image: [source]" or "Text adapted from: [source]"
 
 ---
 
@@ -231,15 +314,15 @@ When you say "I'll stop there," the conclusions slide should already be on scree
 
 | Mistake | Fix |
 |---------|-----|
-| Topic labels as titles | Write action titles (complete sentence, states the takeaway) |
-| Presenting the whole paper | Choose one argument; move the rest to the appendix |
-| Reading the slides aloud | Slides carry evidence; the presenter carries the argument |
-| Evidence without a "so what" | Annotate the key finding directly on the chart |
-| Uncited borrowed figures | Cite on the slide; full reference on References slide |
-| Body text < 20 pt | Remove content until it fits at 20 pt |
-| Inconsistent formatting | One font, one citation style, consistent grid alignment |
-| Slides you won't discuss | Move to appendix if you won't have time |
-| Going over time | Rehearse under time; know what to cut |
-| Ending on "Thank You" | End on conclusions slide; it stays up during Q&A |
-| Burying the research question | State it explicitly, on its own slide, in slides 2–3 |
-| No references slide | Always include one |
+| Content overflows the slide | Shrink font or split across slides — content always fits |
+| Text enhancements used inconsistently | Bold, italic, underline, caps follow the §5 conventions throughout |
+| Grammar colours inconsistent | Same colour = same part of speech across the entire deck |
+| Instructions missing from exercise slides | Always include written instructions |
+| Too much text for the students' language level | Match vocabulary and structure complexity to proficiency |
+| Decorative images that don't support learning | Every image must illustrate vocabulary or support comprehension |
+| No warm-up or wrap-up | Always bookend the lesson — warm-up at start, review at end |
+| Vocabulary without example sentences | Every new word needs at least one example in context |
+| Exercise without a word bank when needed | Lower levels need word banks; include them by default for A1–A2 |
+| Inconsistent formatting | One font, consistent grid, consistent enhancement conventions |
+| Font too small for TV at back of room | Target ≥ 24 pt body text; reduce only when content forces it |
+| Slides with no clear purpose | Every slide should answer: "What are students doing/learning here?" |
