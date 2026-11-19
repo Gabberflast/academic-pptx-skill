@@ -5,6 +5,7 @@ lint_deck.py — check a finished .pptx against the academic or pitch rules.
     python3 scripts/lint_deck.py talk.pptx --mode academic --minutes 15
     python3 scripts/lint_deck.py talk.pptx --mode academic --source paper_out/paper.json
     python3 scripts/lint_deck.py deck.pptx --mode pitch
+    python3 scripts/lint_deck.py deck.pptx --rules deck_rules.md   # the user's own rules
     python3 scripts/lint_deck.py deck.pptx --ghost          # titles only
     python3 scripts/lint_deck.py deck.pptx --json
 
@@ -20,6 +21,11 @@ What it cannot check: whether the argument is right. It prints the ghost deck
 Works best on decks built with scripts/deck_kit.js, whose text boxes are named
 (dk-title, dk-body, dk-cite, ...). On any other .pptx it falls back to
 position and size heuristics, so expect a few misclassified boxes there.
+
+A deck_rules.md beside the .pptx or in the current folder is picked up
+automatically (see scripts/deck_rules.py); --no-rules ignores it. It can change
+limits, add banned words and required sections, and switch checks off, except
+the ones that guard against invented content.
 
 Requires: python-pptx
 """
@@ -39,6 +45,12 @@ try:
 except ImportError:  # pragma: no cover
     sys.stderr.write("lint_deck.py needs python-pptx:  pip install python-pptx\n")
     sys.exit(2)
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+try:
+    from deck_rules import find_rules, load_rules
+except ImportError:  # the linter still works alone, without custom rules
+    find_rules = load_rules = None
 
 EMU_IN = 914400.0
 
@@ -578,9 +590,10 @@ PLACEHOLDER_RE = re.compile(r"\[\[|\]\]|\bNEEDS:|\bTODO\b|\bTBD\b|\bTK\b|lorem i
 # ---------------------------------------------------------------- rules
 
 
-def lint(slides, W, H, mode, minutes=None, source=None, require_notes=False):
+def lint(slides, W, H, mode, minutes=None, source=None, require_notes=False, rules=None):
     F = []
     area = W * H
+    cfg = (rules or {}).get("settings", {})
 
     def add(level, rule, slide, msg, fix=""):
         F.append(Finding(level, rule, slide, msg, fix))
@@ -588,7 +601,17 @@ def lint(slides, W, H, mode, minutes=None, source=None, require_notes=False):
     presented = [s for s in slides if s.kind not in ("appendix", "references")]
     claim_slides = [s for s in slides if s.kind in ("content", "appendix")]
     warn_w, err_w = WORD_LIMITS[mode]
-    floors = FLOORS[mode]
+    if isinstance(cfg.get("body_words"), (int, float)):
+        warn_w = int(cfg["body_words"])
+        err_w = max(err_w, int(round(warn_w * 1.5)))
+    title_words = int(cfg["title_words"]) if isinstance(cfg.get("title_words"), (int, float)) else TITLE_WORDS[mode]
+    floors = dict(FLOORS[mode])
+    for key, group in (("body_min", "body"), ("title_min", "title")):
+        if isinstance(cfg.get(key), (int, float)):
+            floors[group] = (cfg[key] - 2, cfg[key])
+    if minutes is None and isinstance(cfg.get("minutes"), (int, float)):
+        minutes = cfg["minutes"]
+    max_slides = cfg.get("max_slides") if isinstance(cfg.get("max_slides"), (int, float)) else None
 
     # ---- every slide
     inherit = 0
@@ -612,9 +635,9 @@ def lint(slides, W, H, mode, minutes=None, source=None, require_notes=False):
                 elif v == "weak":
                     add("warning", "TITLE-NO-VERB", s.n, f"title may not state a claim (no verb found): “{s.title}”",
                         "An action title says what is true, not what the slide is about.")
-                if len(s.title.split()) > TITLE_WORDS[mode]:
+                if len(s.title.split()) > title_words:
                     add("warning", "TITLE-LONG", s.n, f"title is {len(s.title.split())} words",
-                        f"Keep it under {TITLE_WORDS[mode]} words; if it will not fit in two lines the point is not sharp yet.")
+                        f"Keep it under {title_words} words; if it will not fit in two lines the point is not sharp yet.")
 
         # words
         if s.kind in ("content", "conclusions"):
@@ -696,7 +719,11 @@ def lint(slides, W, H, mode, minutes=None, source=None, require_notes=False):
     for s in slides:
         for t in s.texts:
             faces |= t.fonts
-    if len(faces) > (1 if mode == "academic" else 2):
+    want_face = cfg.get("face")
+    if want_face and faces - {want_face}:
+        add("warning", "R-FACE", 0, f"typeface(s) other than {want_face} in use: {', '.join(sorted(faces - {want_face}))}",
+            f"deck_rules.md sets the typeface to {want_face}.")
+    elif len(faces) > (1 if mode == "academic" else 2):
         add("warning", "FONTS", 0, f"{len(faces)} typefaces in use: {', '.join(sorted(faces))}",
             "Use one typeface; build hierarchy with size and weight.")
 
@@ -727,11 +754,34 @@ def lint(slides, W, H, mode, minutes=None, source=None, require_notes=False):
                 add("warning", "NUMBER-NOT-IN-SOURCE", s.n, f"not found in the source: {', '.join(missing)}",
                     "Check each against the paper. If it is derived (a ratio, a rounding), say how in the speaker notes; if it is wrong, fix it.")
 
+    # ---- the user's own rules (deck_rules.md)
+    for phrase in cfg.get("banned_words", []) or []:
+        pat = re.compile(rf"(?<!\w){re.escape(phrase)}(?!\w)", re.I)
+        for s in slides:
+            if s.kind != "references" and pat.search(s.all_text):
+                add("warning", "R-BANNED-WORD", s.n, f"“{phrase}” is on the banned list in deck_rules.md",
+                    "Reword the slide without it.")
+    for phrase in cfg.get("required_sections", []) or []:
+        low = phrase.lower()
+        if not any(low in s.kicker.lower() or low in s.title.lower() or low == (s.section or "") for s in slides):
+            add("warning", "R-SECTION-MISSING", 0, f"deck_rules.md requires a “{phrase}” slide and none was found",
+                "Add the slide, with that phrase in its section label or title.")
+    if max_slides is not None and mode == "academic":
+        main = [s for s in presented if s.kind in ("content", "conclusions", "divider")]
+        if len(main) > max_slides:
+            add("warning", "R-MAX-SLIDES", 0, f"{len(main)} presented slides; deck_rules.md sets a maximum of {max_slides:g}",
+                "Move the extra slides to the appendix.")
+
     if mode == "academic":
         _academic(slides, presented, add, minutes)
     else:
-        _pitch(slides, presented, add)
+        _pitch(slides, presented, add, max_slides)
 
+    off = set(cfg.get("disable", []) or [])
+    suppressed = [f for f in F if f.rule in off]
+    F = [f for f in F if f.rule not in off]
+    if rules is not None:
+        rules["suppressed"] = len(suppressed)
     F.sort(key=lambda f: (Finding.ORDER[f.level], f.slide, f.rule))
     return F
 
@@ -811,13 +861,15 @@ def _academic(slides, presented, add, minutes):
             "Give a long talk signposts so the audience knows where they are.")
 
 
-def _pitch(slides, presented, add):
+def _pitch(slides, presented, add, max_slides=None):
     main = [s for s in presented if s.kind != "title"]
-    if len(main) > 20:
-        add("error", "P-LENGTH", 0, f"{len(main)} slides before the appendix",
+    soft = max_slides if max_slides is not None else 15
+    hard = math.ceil(soft * 4 / 3)
+    if len(main) > hard:
+        add("error", "P-LENGTH", 0, f"{len(main)} slides before the appendix (limit {soft:g})",
             "A seed deck is about 10–12 slides. Keep one slide per section and move the rest to the appendix.")
-    elif len(main) > 15:
-        add("warning", "P-LENGTH", 0, f"{len(main)} slides before the appendix",
+    elif len(main) > soft:
+        add("warning", "P-LENGTH", 0, f"{len(main)} slides before the appendix (limit {soft:g})",
             "Aim for 10–12. Each section is one slide, rarely more than three.")
 
     by_sec = {}
@@ -897,13 +949,36 @@ def ghost_deck(slides):
     return "\n".join(lines)
 
 
-def report(path, mode, slides, findings):
+def rules_summary(rules):
+    """Lines describing what deck_rules.md changed, and the written rules to check by hand."""
+    if not rules:
+        return []
+    out = [f"CUSTOM RULES — {rules['path']}"]
+    shown = {k: v for k, v in rules["settings"].items() if k not in rules["unknown"]}
+    if shown:
+        out.append("  settings: " + "; ".join(
+            f"{k} = {', '.join(map(str, v)) if isinstance(v, list) else v}" for k, v in sorted(shown.items())))
+    if rules["settings"].get("disable"):
+        out.append(f"  switched off: {', '.join(rules['settings']['disable'])} ({rules.get('suppressed', 0)} finding(s) hidden)")
+    if rules["locked"]:
+        out.append(f"  NOT switched off (they guard against invented content): {', '.join(rules['locked'])}")
+    if rules["unknown"]:
+        out.append(f"  ignored, not a known setting: {', '.join(rules['unknown'])}")
+    if rules["rules"]:
+        out.append("  written rules — the linter cannot check these; confirm each by hand:")
+        out += [f"    □ {r}" for r in rules["rules"]]
+    out.append("")
+    return out
+
+
+def report(path, mode, slides, findings, rules=None):
     counts = {k: sum(1 for s in slides if s.kind == k) for k in ("appendix", "references")}
     shown = len(slides) - counts["appendix"] - counts["references"]
     out = [f"{path} — {mode} mode — {len(slides)} slides "
            f"({shown} presented, {counts['references']} references, {counts['appendix']} appendix)", "",
            "GHOST DECK — read the titles in order. Do they make the whole argument on their own?",
            ghost_deck(slides), ""]
+    out += rules_summary(rules)
     n = {lvl: sum(1 for f in findings if f.level == lvl) for lvl in ("error", "warning", "note")}
     out.append(f"FINDINGS — {n['error']} error(s), {n['warning']} warning(s), {n['note']} note(s)")
     for f in findings:
@@ -925,6 +1000,8 @@ def main(argv=None):
     ap.add_argument("--minutes", type=float, help="talk length; enforces one slide per minute (academic)")
     ap.add_argument("--source", help="paper.json from extract_paper.py, or a .pdf/.txt/.tex; every number on a slide must appear in it")
     ap.add_argument("--require-notes", action="store_true", help="treat missing speaker notes as a warning")
+    ap.add_argument("--rules", help="the user's deck_rules.md (default: one beside the .pptx or in the current folder)")
+    ap.add_argument("--no-rules", action="store_true", help="ignore any deck_rules.md")
     ap.add_argument("--strict", action="store_true", help="exit 1 on warnings as well as errors")
     ap.add_argument("--ghost", action="store_true", help="print only the titles in order")
     ap.add_argument("--json", action="store_true", help="machine-readable output")
@@ -954,16 +1031,25 @@ def main(argv=None):
         except Exception as e:
             sys.stderr.write(f"could not read source {a.source}: {e}\n")
             return 2
-    findings = lint(slides, W, H, mode, minutes=a.minutes, source=source, require_notes=a.require_notes)
+    rules = None
+    if not a.no_rules and load_rules is not None:
+        rules_path = a.rules or find_rules(a.pptx)
+        if a.rules and not Path(a.rules).is_file():
+            sys.stderr.write(f"rules file not found: {a.rules}\n")
+            return 2
+        if rules_path:
+            rules = load_rules(rules_path, mode)
+    findings = lint(slides, W, H, mode, minutes=a.minutes, source=source, require_notes=a.require_notes, rules=rules)
     errors = sum(1 for f in findings if f.level == "error")
     warnings = sum(1 for f in findings if f.level == "warning")
     if a.json:
         print(json.dumps({
             "file": a.pptx, "mode": mode, "slides": len(slides), "errors": errors, "warnings": warnings,
             "ghost_deck": [{"slide": s.n, "kind": s.kind, "section": s.section, "title": s.title} for s in slides],
+            "rules": rules,
             "findings": [f.as_dict() for f in findings]}, indent=2))
     else:
-        print(report(a.pptx, mode, slides, findings))
+        print(report(a.pptx, mode, slides, findings, rules))
     return 1 if errors or (a.strict and warnings) else 0
 
 

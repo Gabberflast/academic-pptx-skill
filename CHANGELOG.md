@@ -26,6 +26,17 @@
 - Budgets by talk type (lightning talk, lab meeting, seminar, job talk, defense, grant
   briefing); guidance on equations, regression tables, speaker notes and slide numbers.
 
+- **`deck_rules.md` and `scripts/deck_rules.py`.** A file the user keeps that layers
+  their own settings (colours, typeface, footer, word and slide limits, banned words,
+  required sections, linter rules to switch off) and written house rules on top of the
+  baseline. The kit and the linter read it; the checks against invented content cannot
+  be switched off.
+- **Intake step** (`customization.md`): what to build from, colour scheme, slot and
+  house rules, asked once up front and skipped where the rules file already answers.
+- **Colour schemes.** Ten named schemes including one dark background; colours and
+  fonts can be read from an existing `.pptx` or `.potx`; the kit warns when a colour
+  would be unreadable as text.
+
 ### Fixed
 
 - `SKILL.md` front matter said the licence was proprietary; the repository is MIT.

@@ -20,8 +20,10 @@ const deck = createDeck({
   author: "A. Rivera, B. Chen",
   footer: "Rivera & Chen · SOLE 2026",                // optional, bottom-left of every slide
   // sections: ["Motivation", "Design", "Results", "Discussion"],   // breadcrumb, long talks only
+  // scheme: "forest",                                              // a named scheme (customization.md)
   // colors: { primary: "4B2E83", accent: "85754D" },               // institution colours
   // face: "Calibri",                                               // one typeface throughout
+  // rules: "deck_rules.md",                                        // the user's saved colours and limits
 });
 
 // ... slides ...

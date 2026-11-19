@@ -18,7 +18,9 @@ const deck = createDeck({
   title: "Ledgerline seed deck",
   author: "Ledgerline",
   colors: { accent: "2563EB" },   // the company's one brand colour
+  // scheme: "emerald",           // or a named scheme (customization.md)
   // face: "Inter",               // their typeface, if it will be installed where the deck is opened
+  // rules: "deck_rules.md",      // the founder's saved colours, limits and house rules
 });
 
 // ... slides ...

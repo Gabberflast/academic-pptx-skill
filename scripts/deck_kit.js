@@ -10,7 +10,8 @@
  *
  * Usage:
  *   const { createDeck, NEEDS } = require("./deck_kit.js");
- *   const deck = createDeck({ mode: "academic", title: "...", author: "..." });
+ *   const deck = createDeck({ mode: "academic", title: "...", author: "...",
+ *                             scheme: "forest", rules: "deck_rules.md" });
  *   deck.titleSlide({ ... });
  *   deck.result({ ... });
  *   await deck.save("talk.pptx");
@@ -70,6 +71,96 @@ const THEMES = {
   },
 };
 
+/**
+ * Named colour schemes. Each works in either mode. Every text colour here is at
+ * least 4.5:1 against its background. `midnight` is the one dark-background scheme.
+ */
+const SCHEMES = {
+  navy: { primary: "1F4E79", accent: "2E75B6" },
+  crimson: { primary: "7A1E2C", accent: "B03A48" },
+  forest: { primary: "1E4D3B", accent: "2F7D5B" },
+  plum: { primary: "4B2E83", accent: "7A5CC0" },
+  slate: { primary: "1F2937", accent: "475569" },
+  ink: { primary: "111827", accent: "2563EB" },
+  emerald: { primary: "111827", accent: "047857" },
+  violet: { primary: "111827", accent: "6D28D9" },
+  ember: { primary: "111827", accent: "C2410C" },
+  midnight: {
+    bg: "0B1220", darkBg: "020617", primary: "F9FAFB", accent: "60A5FA", body: "E5E7EB",
+    muted: "9CA3AF", neutral: "6B7280", grid: "1F2937", card: "1E293B",
+    onDark: "FFFFFF", onDarkMuted: "CBD5E1",
+  },
+};
+
+const RULE_SCOPES = ["all", "academic", "pitch"];
+const RULE_LISTS = ["disable", "banned_words", "required_sections"];
+const RULE_NUMBERS = ["title_size", "body_size", "body_words", "title_words", "body_min", "title_min", "max_slides", "minutes"];
+const RULE_COLORS = ["primary", "accent", "background", "body"];
+
+/**
+ * Reads deck_rules.md (see scripts/deck_rules.py for the format).
+ * Returns { settings, rules } for one mode, or null when the file does not exist.
+ */
+function loadRules(file, mode) {
+  if (!file || !fs.existsSync(file)) return null;
+  const settings = { all: {}, academic: {}, pitch: {} };
+  const rules = [];
+  let section = null;
+  let fenced = false;
+  const known = RULE_LISTS.concat(RULE_NUMBERS, RULE_COLORS, ["scheme", "face", "footer"]);
+  fs.readFileSync(file, "utf8").split(/\r?\n/).forEach((line) => {
+    if (line.trim().startsWith("```")) { fenced = !fenced; return; }
+    const h = fenced ? null : line.match(/^##\s+(.*?)\s*$/);
+    if (h) {
+      const name = h[1].toLowerCase();
+      if (name.startsWith("settings")) {
+        const scope = name.includes(":") ? name.split(":")[1].trim() : "all";
+        section = { kind: "settings", scope: RULE_SCOPES.includes(scope) ? scope : "all" };
+      } else if (name.startsWith("rules")) {
+        section = { kind: "rules" };
+      } else {
+        section = null;
+      }
+      return;
+    }
+    if (!section || !line.trim()) return;
+    if (section.kind === "settings") {
+      const m = line.match(/^\s*([A-Za-z_]+)\s*:\s*(.*?)\s*$/);
+      if (!m || !m[2]) return;
+      const key = m[1].toLowerCase();
+      if (!fenced && !known.includes(key)) return;   // prose outside the code block
+      let value = m[2].replace(/^["']|["']$/g, "");
+      if (RULE_COLORS.includes(key)) value = value.replace(/^#/, "").toUpperCase();
+      else if (RULE_LISTS.includes(key)) value = value.split(",").map((v) => v.trim()).filter(Boolean);
+      else if (RULE_NUMBERS.includes(key) && !Number.isNaN(Number(value))) value = Number(value);
+      settings[section.scope][key] = value;
+    } else {
+      const m = line.match(/^\s*[-*]\s+(?:\[(\w+)\]\s*)?(.*?)\s*$/);
+      if (!m || !m[2]) return;
+      const scope = RULE_SCOPES.includes((m[1] || "all").toLowerCase()) ? (m[1] || "all").toLowerCase() : "all";
+      rules.push({ scope, text: m[2].replace(/\s*\(added \d{4}-\d{2}-\d{2}\)\s*$/, "") });
+    }
+  });
+  return {
+    file,
+    settings: Object.assign({}, settings.all, settings[mode] || {}),
+    rules: rules.filter((r) => r.scope === "all" || r.scope === mode).map((r) => r.text),
+  };
+}
+
+function luminance(hex) {
+  const ch = (i) => {
+    const v = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * ch(0) + 0.7152 * ch(2) + 0.0722 * ch(4);
+}
+
+function contrast(a, b) {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
 /** Marks a fact you do not have. The linter fails the deck until every one is replaced. */
 function NEEDS(what) {
   return `[[NEEDS: ${what}]]`;
@@ -125,23 +216,73 @@ function imageSize(path) {
 // ---------- deck ----------
 
 class Deck {
+  /**
+   * opts: mode, title, author, footer, sections,
+   *       scheme  — a name from SCHEMES,
+   *       colors  — individual overrides, e.g. { accent: "0F766E" },
+   *       face    — typeface,
+   *       rules   — path to the user's deck_rules.md.
+   * Order of precedence: these arguments, then deck_rules.md, then the mode's defaults.
+   */
   constructor(opts = {}) {
     this.mode = opts.mode === "pitch" ? "pitch" : "academic";
     const base = THEMES[this.mode];
+    this.warnings = [];
+    this.count = 0;
+    this.rules = loadRules(opts.rules, this.mode);
+    if (opts.rules && !this.rules) this.warnings.push(`deck: rules file not found: ${opts.rules}`);
+    const set = this.rules ? this.rules.settings : {};
+
+    const schemeName = opts.scheme || set.scheme;
+    if (schemeName && !SCHEMES[schemeName]) {
+      this.warnings.push(`deck: unknown colour scheme "${schemeName}" (have: ${Object.keys(SCHEMES).join(", ")})`);
+    }
+    const fromRules = {};
+    if (set.primary) fromRules.primary = set.primary;
+    if (set.accent) fromRules.accent = set.accent;
+    if (set.background) fromRules.bg = set.background;
+    if (set.body) fromRules.body = set.body;
+    const explicit = {};
+    Object.entries(opts.colors || {}).forEach(([k, v]) => { explicit[k] = String(v).replace(/^#/, "").toUpperCase(); });
+    const colors = Object.assign({}, base.colors, SCHEMES[schemeName] || {}, fromRules, explicit);
+    if (!colors.darkBg) colors.darkBg = luminance(colors.primary) < 0.2 ? colors.primary : "111827";
+
+    const size = Object.assign({}, base.size);
+    if (set.title_size) { size.title = set.title_size; size.titleMin = Math.min(size.titleMin, set.title_size); }
+    if (set.body_size) size.body = set.body_size;
+    Object.assign(size, opts.size || {});
+
     this.t = {
-      face: opts.face || base.face,
-      colors: Object.assign({}, base.colors, opts.colors || {}),
-      size: Object.assign({}, base.size, opts.size || {}),
-      bodyWords: base.bodyWords,
+      face: opts.face || set.face || base.face,
+      colors,
+      size,
+      bodyWords: set.body_words || base.bodyWords,
     };
+    this._checkColors();
+
     this.pres = new PptxGenJS();
     this.pres.layout = "LAYOUT_16x9";
     if (opts.title) this.pres.title = opts.title;
     if (opts.author) this.pres.author = opts.author;
-    this.footer = opts.footer || "";          // e.g. "Smith & Doe · SOLE 2025"
-    this.sections = opts.sections || null;    // breadcrumb labels for long talks
-    this.count = 0;
-    this.warnings = [];
+    this.footer = opts.footer || set.footer || "";   // e.g. "Smith & Doe · SOLE 2025"
+    this.sections = opts.sections || null;           // breadcrumb labels for long talks
+  }
+
+  /** A colour the audience cannot read is not a style choice. */
+  _checkColors() {
+    const c = this.t.colors;
+    const need = [
+      ["title colour", c.primary, c.bg, 4.5], ["accent colour", c.accent, c.bg, 4.5],
+      ["body colour", c.body, c.bg, 7], ["source-line colour", c.muted, c.bg, 4.5],
+      ["text on dark slides", c.onDark, c.darkBg, 7],
+    ];
+    need.forEach(([what, fg, bg, min]) => {
+      if (!/^[0-9A-F]{6}$/i.test(fg) || !/^[0-9A-F]{6}$/i.test(bg)) {
+        this.warnings.push(`deck: ${what} "${fg}" on "${bg}" is not a six-digit hex colour`);
+      } else if (contrast(fg, bg) < min) {
+        this.warnings.push(`deck: ${what} #${fg} on #${bg} is ${contrast(fg, bg).toFixed(1)}:1 — below ${min}:1, pick a darker shade`);
+      }
+    });
   }
 
   // ----- primitives -----
@@ -154,7 +295,7 @@ class Deck {
     const slide = this.pres.addSlide();
     this.count += 1;
     const c = this.t.colors;
-    slide.background = { color: dark ? c.primary : c.bg };
+    slide.background = { color: dark ? c.darkBg : c.bg };
     if (numbered) {
       slide.slideNumber = {
         x: W - M - 0.6, y: H - 0.42, w: 0.6, h: 0.3,
@@ -759,7 +900,11 @@ class Deck {
       out.push(`${this.warnings.length} build warning(s):`);
       this.warnings.forEach((w) => out.push(`  - ${w}`));
     }
-    out.push(`next: python3 scripts/lint_deck.py ${path} --mode ${this.mode}`);
+    if (this.rules && this.rules.rules.length) {
+      out.push(`house rules from ${this.rules.file} — confirm the deck follows each:`);
+      this.rules.rules.forEach((r) => out.push(`  □ ${r}`));
+    }
+    out.push(`next: python3 scripts/lint_deck.py ${path} --mode ${this.mode}${this.rules ? ` --rules ${this.rules.file}` : ""}`);
     console.log(out.join("\n"));
     return this.warnings;
   }
@@ -769,4 +914,4 @@ function createDeck(opts) {
   return new Deck(opts);
 }
 
-module.exports = { createDeck, NEEDS, THEMES, estLines, words };
+module.exports = { createDeck, NEEDS, THEMES, SCHEMES, loadRules, contrast, estLines, words };

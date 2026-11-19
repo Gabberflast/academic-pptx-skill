@@ -39,7 +39,9 @@ slides and fewer supporting points.
 ## 3. Intake: the facts to collect first
 
 Ask the founder for these before outlining. Do not fill gaps with plausible numbers;
-use `NEEDS("…")` and list what is missing when you hand over.
+use `NEEDS("…")` and list what is missing when you hand over. The general intake round
+(input material, colour scheme, slot, house rules) is in
+[../customization.md](../customization.md); this list is the pitch-specific content.
 
 - **One line**: what the company does, in words a stranger would understand.
 - **Problem**: who has it, how they cope today, what it costs them (time, money, risk). Any evidence: interviews, survey, their own experience.
@@ -184,7 +186,9 @@ deck will not pass the linter until the founder fills it in, which is the point.
 - A logo on the title slide is enough; it does not need to be on every slide.
 - Slide numbers on every slide, so "go back to seven" works in a meeting.
 
-Pass the brand to the kit: `createDeck({ mode: "pitch", colors: { accent: "0F766E" }, face: "Inter" })`.
+Pass the brand to the kit: `createDeck({ mode: "pitch", colors: { accent: "0F766E" }, face: "Inter" })`,
+or pick a named scheme (`ink`, `emerald`, `violet`, `ember`, `slate`, `midnight`). Save
+the choice to the founder's `deck_rules.md` so the next deck matches.
 
 ## 9. Appendix
 

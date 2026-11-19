@@ -18,7 +18,9 @@ rules, adds a pitch mode, and adds scripts that build to the rules and check the
 | Starting from a paper | — | `scripts/extract_paper.py` (PDF or LaTeX → sections, captions, references, numbers, figures) and a ten-step paper-to-talk workflow |
 | Made-up content | "Cite everything borrowed" | Explicit rules against invented numbers, citations and customers; a `NEEDS()` placeholder the linter refuses to pass; `--source` traces every number on a slide back to the paper |
 | Speaker notes, slide numbers | — | Required by the kit, checked by the linter |
-| Tests | — | `tests/run_tests.py`: 38 end-to-end checks |
+| Your own rules | — | `deck_rules.md`: a file you keep that records your colours, typeface, limits, banned words, required slides and house rules. The kit and linter read it; Claude adds to it when you state a lasting preference |
+| Intake | — | Claude asks up front what to build from (paper, old deck, data, notes) and which colour scheme to use: ten named schemes, your own hex colours, or "match this deck" |
+| Tests | — | `tests/run_tests.py`: end-to-end checks of the kit, linter, extractor and rules file |
 
 It also fixes problems in the original: guidance that contradicted its own code (rules
 under titles, title alignment, where the References slide goes), example snippets below
@@ -89,6 +91,24 @@ Ask naturally:
 The skill works alongside Anthropic's built-in PPTX skill, which handles the file
 format. This skill handles content, structure and checking.
 
+### Your own rules
+
+Tell Claude a lasting preference ("always use our green", "never more than 12 slides",
+"ban the word synergy") and it is written to `deck_rules.md`. Keep that file in your
+project folder, or attach it next time, and every later deck starts from it. You can
+also edit it by hand; it is plain markdown. See [customization.md](customization.md).
+
+```bash
+python3 scripts/deck_rules.py init
+python3 scripts/deck_rules.py set scheme emerald --scope pitch
+python3 scripts/deck_rules.py set banned_words "synergy, leverage"
+python3 scripts/deck_rules.py add "The title slide carries the round and the month" --scope pitch
+python3 scripts/deck_rules.py from-template brand.pptx     # read colours and fonts from an existing deck
+```
+
+A rules file can change style, structure and limits. It cannot switch off the checks
+for unfilled placeholders, uncited sources or numbers missing from the paper.
+
 The scripts also run on their own:
 
 ```bash
@@ -107,6 +127,7 @@ slides for a visual check.
 
 ```
 ├── SKILL.md                         Entry point: mode choice, workflow, design standards
+├── customization.md                 Intake questions, colour schemes, the deck_rules.md format
 ├── academic/
 │   ├── content_guidelines.md        Argument structure, action titles, exhibits, citations, timing
 │   ├── slide_patterns.md            Each academic slide type, built with the kit
@@ -117,6 +138,7 @@ slides for a visual check.
 ├── scripts/
 │   ├── deck_kit.js                  Slide builders on PptxGenJS
 │   ├── lint_deck.py                 Deck linter
+│   ├── deck_rules.py                Reads and updates the user's deck_rules.md
 │   └── extract_paper.py             Paper → talk material
 ├── examples/                        Two complete build scripts (content is invented)
 ├── tests/                           End-to-end tests and a small invented paper as fixture

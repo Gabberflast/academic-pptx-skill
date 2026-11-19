@@ -5,7 +5,7 @@
  * ALL CONTENT IS INVENTED for illustration — the study, the numbers and the
  * references do not exist. Do not reuse them.
  *
- * Run:  NODE_PATH=$(npm root -g) node examples/build_academic_example.js [out.pptx]
+ * Run:  NODE_PATH=$(npm root -g) node examples/build_academic_example.js [out.pptx] [deck_rules.md]
  */
 const path = require("path");
 const { createDeck } = require(path.join(__dirname, "..", "scripts", "deck_kit.js"));
@@ -16,6 +16,7 @@ const deck = createDeck({
   title: "Tutoring effects persist to graduation",
   author: "A. Rivera, B. Chen",
   footer: "Rivera & Chen · Example Conference 2026",
+  rules: process.argv[3],   // optional: path to a deck_rules.md
 });
 
 deck.titleSlide({

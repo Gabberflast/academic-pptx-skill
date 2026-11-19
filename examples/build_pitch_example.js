@@ -5,13 +5,18 @@
  * ALL CONTENT IS INVENTED for illustration — the company, the customers and
  * every number are made up. Do not reuse them.
  *
- * Run:  NODE_PATH=$(npm root -g) node examples/build_pitch_example.js [out.pptx]
+ * Run:  NODE_PATH=$(npm root -g) node examples/build_pitch_example.js [out.pptx] [deck_rules.md]
  */
 const path = require("path");
 const { createDeck } = require(path.join(__dirname, "..", "scripts", "deck_kit.js"));
 
 const out = process.argv[2] || "pitch_example.pptx";
-const deck = createDeck({ mode: "pitch", title: "Ledgerline seed deck", author: "Ledgerline" });
+const deck = createDeck({
+  mode: "pitch",
+  title: "Ledgerline seed deck",
+  author: "Ledgerline",
+  rules: process.argv[3],   // optional: path to a deck_rules.md
+});
 
 deck.pitchTitle({
   company: "Ledgerline",
