@@ -1,152 +1,212 @@
 ---
-name: academic-pptx
-description: "Use this skill whenever the user wants to create or improve a presentation for an academic context — conference papers, seminar talks, thesis defenses, grant briefings, lab meetings, invited lectures, or any presentation where the audience will evaluate reasoning and evidence. Triggers include: 'conference talk', 'seminar slides', 'thesis defense', 'research presentation', 'academic deck', 'academic presentation'. Also triggers when the user asks to 'make slides' in combination with academic content (e.g., 'make slides for my paper on X', 'create a presentation for my dissertation defense', 'build a deck for my grant proposal'). This skill governs CONTENT and STRUCTURE decisions. For the technical work of creating or editing the .pptx file itself, also read the pptx SKILL.md."
-license: Proprietary. LICENSE.txt has complete terms
+name: academic-pitch-pptx
+description: "Build or improve argument-first slide decks in two modes. ACADEMIC: conference talks, seminar slides, thesis defenses, job talks, lab meetings, grant briefings, or turning a paper (PDF or LaTeX) into a talk. PITCH: startup fundraising decks for pre-seed, seed or Series A, demo day, accelerator applications, in the style investors such as YC, Sequoia and a16z ask for. Use it when the user says things like 'make slides for my paper', 'thesis defense deck', 'conference talk', 'pitch deck', 'investor deck', 'seed deck', 'demo day slides', or asks to review or fix such a deck. It governs content, structure and checking; it ships a slide-building kit, a deck linter, a paper extractor, and a deck_rules.md file that remembers the user's own colours and house rules. For the mechanics of .pptx files, also read the pptx skill."
+license: MIT. See LICENSE.
 ---
 
-# Academic Presentations Skill
+# Academic and Pitch Decks
 
-## How This Skill Works
+Both kinds of deck fail the same way: slides that name topics instead of making claims,
+too much text in type too small to read, numbers nobody can trace. This skill treats a
+deck as an argument. Every slide states one claim in its title and shows the evidence
+for it, and a script checks the finished file.
 
-This skill has two layers:
+It has three parts:
 
-1. **This file** — governs content, argument structure, and design standards for academic presentations. Read it fully before planning any slides.
-2. **PPTX skill** — governs the technical implementation (creating, editing, and QA-ing the .pptx file). Read it too.
+| Part | What it is |
+|------|------------|
+| Guidelines | What goes on the slides and in what order, per mode |
+| `scripts/deck_kit.js` | Slide builders on top of PptxGenJS. Titles are measured, layout flows from them, fonts stay above the readable floor |
+| `scripts/lint_deck.py` | Opens the finished `.pptx` and reports rule violations. `scripts/extract_paper.py` pulls talk material out of a paper |
+| `deck_rules.md` | The user's own file: their colours, limits and house rules, layered on this baseline. `scripts/deck_rules.py` reads and updates it |
 
-**Always read both before writing any code or creating any files.**
+The pptx skill covers the file format itself (PptxGenJS API, editing existing files,
+rendering to images). Read it as well. Where the two disagree on design, this skill wins:
+these decks are judged on reasoning, and decoration competes with it.
 
----
+## Step 1: Pick the mode
 
-## Quick Reference
+| The user has… | Mode | Read |
+|---------------|------|------|
+| A paper, study, thesis, dataset or grant; an audience that will evaluate reasoning | **academic** | [academic/content_guidelines.md](academic/content_guidelines.md), [academic/slide_patterns.md](academic/slide_patterns.md) |
+| A paper (PDF or LaTeX) to turn into a talk | **academic**, starting from the paper | [academic/paper_to_deck.md](academic/paper_to_deck.md) first |
+| A company raising money, a demo day slot, an accelerator application | **pitch** | [pitch/pitch_guidelines.md](pitch/pitch_guidelines.md), [pitch/slide_patterns.md](pitch/slide_patterns.md) |
+| A public lecture, keynote or outreach talk | neither | Use the pptx skill's design-forward defaults; keep action titles |
 
-| Task | Guide |
-|------|-------|
-| Content planning, argument structure, slide-by-slide rules | [content_guidelines.md](content_guidelines.md) |
-| Per-slide-type patterns (title, methods, results, etc.) | [slide_patterns.md](slide_patterns.md) |
-| Technical creation from scratch | PPTX skill → `pptxgenjs.md` |
-| Technical editing of an existing file | PPTX skill → `editing.md` |
+A researcher pitching a spin-out to investors is in pitch mode. A founder presenting
+results at a conference is in academic mode. The audience decides, not the presenter.
 
----
+## Step 2: Load the user's rules, then ask the intake questions
 
-## Step 1: Identify Presentation Type
+Read [customization.md](customization.md) for the detail. In short:
 
-Before planning a single slide, determine which mode applies.
+1. **Look for `deck_rules.md`** among the attachments and in the user's working folder.
+   If it exists, apply it without being asked and say in one line that you are using
+   it. It outranks this skill's defaults; what the user asks for today outranks it.
+2. **Ask, in one round, whatever is still open** (four questions at most; skip any the
+   request, the attachments or the rules file already answer):
+   - **Input material** — what to build from: a paper, an existing deck, data, notes,
+     company material, or an interview. Ask them to attach it.
+   - **Colour scheme** — the mode's default, a named scheme (`navy`, `crimson`,
+     `forest`, `plum`, `slate`, `ink`, `emerald`, `violet`, `ember`, `midnight`), their
+     own hex colours and typeface, or "match this deck" (attach a `.pptx`).
+   - **The slot** — minutes and audience (academic); stage and read-ahead versus
+     presented (pitch).
+   - **House rules** — anything they always want, and whether to save these answers.
+3. **Save standing preferences** to `deck_rules.md` with `scripts/deck_rules.py`
+   (`set` for settings the tools enforce, `add` for rules written as sentences). Save
+   only what the user stated as a lasting preference: not one-off edits, not this
+   deck's content, not your own choices.
 
-### Structured Argument (default for academic work)
+If nobody is there to answer, use the defaults in customization.md, say which you
+took, and carry on.
 
-Use for: conference papers, seminar talks, thesis defenses, dissertation chapters, grant briefings, internal lab presentations, policy briefings, consulting-style research deliverables.
+## Step 3: Get the facts before the layout
 
-**Priority order: argument structure → data → layout → aesthetics.**
+A deck built on invented content is worse than no deck: the user may not notice a
+plausible-looking number until someone in the audience does.
 
-Follow [content_guidelines.md](content_guidelines.md) in full.
+- **Never invent** a statistic, a result, a citation, a customer, a quote, a logo, a
+  team credential or a market size. This holds even for a "draft".
+- Every number on a slide comes from the user or from a source you have read. In
+  academic mode, record where (page or table) in the speaker notes or the outline.
+- Every reference comes from the paper's own bibliography or a source you have
+  opened. If you cannot find the full reference, drop the citation and say so.
+- When a fact is missing, ask for it. If the user is not there to ask, write
+  `NEEDS("what is missing")` from the kit. It renders as `[[NEEDS: …]]`, the linter
+  fails the deck while any remain, and you list them for the user at the end.
+- Projections are labelled as projections. Illustrative figures are labelled illustrative.
 
-### Visual / Narrative
+For a paper: run `python3 scripts/extract_paper.py paper.pdf --out paper_out`, then work
+from `paper_out/outline.md`. For a pitch: collect the facts listed under "Intake" in the
+pitch guidelines.
 
-Use for: public engagement talks, science communication to non-specialist audiences, funding pitches to lay panels, event keynotes.
+## Step 4: Write the ghost deck and agree it
 
-Follow the PPTX skill's design-forward guidelines. Argument structure still matters, but visual storytelling and emotional engagement take priority.
+Before any slide exists, write the titles in order, each a full sentence stating that
+slide's takeaway, with the exhibit each will carry. Read them top to bottom. If they do
+not make the whole argument on their own, fix the outline; no layout will rescue it.
 
-### When in doubt
+Show the user this outline and wait for agreement when the deck is more than 10 slides,
+when you had to choose which results or which story to feature, or when facts are
+missing. For a short deck with clear content, build it and show the outline alongside.
 
-Default to **Structured Argument**. If the user mentions a paper, a study, a dataset, a thesis, a grant, or a conference, they almost certainly want structured argument mode.
+## Step 5: Build with the kit
 
----
+Copy `scripts/deck_kit.js` next to your build script (or require it by path) and call
+the slide builders: `content`, `twoColumn`, `result`, `question`, `conclusions`,
+`references`, `appendix` for academic; `pitchTitle`, `statement`, `hero`, `tiles`,
+`result`, `team`, `ask` for pitch. The pattern files show each one. Two complete,
+runnable decks are in `examples/`.
 
-## Step 2: Plan the Deck Before Creating Any Slides
-
-Produce a slide-by-slide outline (title, action title, exhibit type) and confirm with the user if the deck is more than 10 slides or if the content is complex. Do not start building until the outline is agreed.
-
-Use the ghost deck test during planning: read only the proposed action titles in sequence. They must tell the complete argument. If they don't, fix the outline before building.
-
----
-
-## Step 3: Apply Design Standards
-
-Academic presentations use **communication-first design**. These rules override the PPTX skill's design-forward defaults.
-
-### Color
-
-- White background for all content slides.
-- One sans-serif font throughout (Arial, Calibri, or Helvetica — confirm with user or match their institution's template if provided).
-- Maximum three colors: one primary, one accent, one for emphasis or alerts. Default: dark navy primary (`1F4E79`), mid-blue accent (`2E75B6`), white or off-white background.
-- No decorative color gradients, no themed color palettes unless the user explicitly requests them.
-- Use color to **direct attention** — highlight the key finding on a chart, mark a callout box — not for decoration.
-
-### Typography
-
-| Element | Size | Weight |
-|---------|------|--------|
-| Action title | 24–28 pt | Bold |
-| Section header | 20–22 pt | Bold |
-| Body bullets | 20 pt | Regular |
-| Chart labels / annotations | 16–18 pt | Regular |
-| Source citations on slides | 12–14 pt | Regular, muted color |
-
-Single font face. Use size and weight for hierarchy — never multiple typefaces.
-
-### Layout
-
-- Left-align all body text. Center only slide titles and axis labels.
-- Consistent grid: all text boxes and figures align to the same margins (minimum 0.5" from slide edges).
-- For result slides: figure on the left, interpretive bullets on the right. This matches natural left-to-right reading.
-- White space is a signal of analytical clarity — do not fill every inch.
-- 16:9 widescreen is the default. Confirm with the user if they know the venue's aspect ratio.
-
-### Avoid (Academic-Specific)
-
-- **No decorative icons** — icons in colored circles, stock images, clip art are inappropriate for analytical academic presentations.
-- **No accent lines under titles** — use whitespace instead.
-- **No color palettes chosen for aesthetic interest** — use institution colors or the minimal defaults above.
-- **No full-bleed background images on content slides** — reserve for title/section dividers only if desired.
-- **No text-heavy slides** — if the audience is reading, they are not listening. Maximum ~40 words of body text per content slide.
-
----
-
-## Step 4: Build and QA
-
-Follow the PPTX skill's QA procedure in full, including:
-- Content QA via `markitdown`
-- Visual QA via slide images (subagents if available)
-- Fix-and-verify loop until a full pass reveals no new issues
-
-**Additionally, run the academic-specific checks:**
-
-```
-Academic QA checklist:
-□ Every content slide has an action title (complete sentence stating the takeaway)
-□ Ghost deck test passes (action titles alone tell the full argument)
-□ One exhibit per results slide; each exhibit has a "so what" annotation
-□ Every borrowed figure or data point has an in-slide citation
-□ A References slide exists at the end
-□ Conclusions slide is the last non-appendix slide (not "Thank You" or a blank)
-□ Contact information and/or QR code/link on the final slide
-□ Font sizes are readable from the back of a room (≥ 20 pt body text)
-□ No decorative elements that don't carry content
-□ Section dividers or breadcrumb bar present for decks > 15 slides
+```bash
+NODE_PATH=$(npm root -g) node build_deck.js
 ```
 
----
+Pass the user's choices to `createDeck`: `scheme: "emerald"`, `colors: { accent:
+"0F766E" }`, `face: "Inter"`, and `rules: "deck_rules.md"` when that file exists. The
+kit warns if a colour would be unreadable as text.
 
-## Key Principles (Summary)
+The kit prints warnings as it builds (title too long, body over the word limit, text
+that will not fit). Treat each as a prompt to cut words. It never shrinks type to make
+content fit, and neither should you.
 
-**Action titles, not topic labels.** Every slide title is a complete sentence stating the takeaway. Reading titles alone should tell the whole argument (ghost deck test).
+Write speaker notes for every slide: what to say in two to four sentences, and the
+transition to the next slide. Slides carry the evidence; notes carry the argument.
 
-**One argument, made well.** Don't present your whole paper. Pick the claim that can be made convincingly in the allotted time. Everything else goes in the appendix.
+For a layout the kit lacks, call `deck.blank({ title })` and draw between the returned
+`top` and `bottom` with PptxGenJS directly. Name your text boxes (`objectName:
+"dk-body"`, `"dk-cite"`, `"dk-annot"`) so the linter can classify them.
 
-**One insight per slide.** One exhibit per results slide. Highlight the key finding directly on the chart — don't make the audience hunt for it.
+## Step 6: Lint, then look
 
-**Slides support speech; they don't replace it.** Body text is for orientation, not information transfer. The presenter carries the argument; the slide carries the evidence.
+```bash
+python3 scripts/lint_deck.py deck.pptx --mode academic --minutes 15 --source paper_out/paper.json
+python3 scripts/lint_deck.py deck.pptx --mode pitch --rules deck_rules.md
+```
 
-**Cite everything borrowed.** Academic integrity applies to slides. In-text citations on the slide, full references on the References slide.
+With a rules file, the linter applies the user's limits, banned words and required
+sections, and prints their written rules as a checklist. It cannot check those
+sentences; you do, against the rendered slides.
 
-**End on conclusions.** The conclusions slide stays on screen during Q&A. Never end on "Thank You" or a blank slide.
+Fix every error. Read every warning and either fix it or be able to say why it does not
+apply. The linter exits non-zero while errors remain.
 
----
+| It catches | Examples |
+|------------|----------|
+| Titles that are not claims | "Results", "Our Team", titles with no verb |
+| Overfull slides | more than 40 body words (academic) or 25 (pitch); text that overflows its box |
+| Unreadable type | body under 20 pt, chart labels under 16 pt, grey-on-white below 4.5:1 contrast |
+| Broken structure | no research question early, no conclusions slide, a "Thank you" slide, slides over the time budget, pitch sections missing |
+| Untraceable content | a citation with no reference, a number that is not in the paper, an unfilled `[[NEEDS]]` |
+| Pitch habits | traction with no number, growth with no time window, "no competitors", buzzwords, valuation on the ask slide |
+| The user's own rules | a banned word, a missing required section, the wrong typeface, more slides than their limit |
+
+The linter checks form. It cannot tell whether the argument is sound or whether a slide
+looks right, so after it passes:
+
+1. Read the ghost deck it prints. Does the argument hold?
+2. Render the deck to images (pptx skill: `soffice` then `pdftoppm`) and look at every
+   slide for overlap, clipped text and awkward gaps. Fix, rebuild, lint again.
+
+## Step 7: Hand over
+
+Send the `.pptx`. In one or two lines tell the user: the claim the deck makes, any
+`NEEDS` items or warnings left open, and anything you chose on their behalf (which
+results made the main deck, what went to the appendix).
+
+If you created or changed `deck_rules.md`, say what you saved and send the file too,
+unless it already lives in a folder the user can see. Attaching it next time, or
+keeping it in their project folder, is what carries the rules forward.
+
+## Design standards
+
+Communication first, in both modes. Colour directs attention to the finding; it is not
+decoration.
+
+| | Academic | Pitch |
+|---|----------|-------|
+| Title | Full-sentence claim, 22–26 pt bold, left-aligned, two lines at most | Full-sentence claim, 28–32 pt bold, left-aligned, 14 words at most |
+| Section label | Only for Conclusions and Appendix | On every slide, above the title (PROBLEM, TRACTION, …) so a skimming investor can find the slide they want |
+| Body | 20 pt minimum, about 40 words | 24 pt, about 25 words |
+| Chart labels | 16 pt minimum | 16 pt minimum |
+| Source line | On every slide with borrowed content or an exhibit, 12–14 pt | On every slide with a number that is not obviously the company's own |
+| Colour | Navy, one accent, grey for non-focal data | Near-black, the company's one brand colour, grey for non-focal data |
+| Background | White; dark only for title, dividers, conclusions | White; dark only for the title slide |
+| Typeface | One sans-serif | One sans-serif |
+| Slide numbers | Always | Always |
+| Last slide shown | Conclusions, left up during questions | The ask, left up during questions |
+
+Avoid in both: decorative icons and stock photos, rules under titles, gradients,
+centred body text, "Thank you" slides, screenshots with unreadable text, and anything
+on the slide the speaker will not talk about.
+
+The table is the baseline. A user's colour scheme, typeface and limits from intake or
+`deck_rules.md` replace the matching rows; the content rules do not change, and the
+checks against invented content cannot be switched off.
+
+## Other output formats
+
+The kit and the linter work on `.pptx`. If the deck is being built somewhere else (a
+slides artifact, Google Slides, Keynote, Beamer), the guidelines still apply in full:
+ghost deck first, action titles, one exhibit per slide, word limits, traceable numbers.
+Apply the checklist at the end of each pattern file by hand.
+
+## Files
+
+| File | Read it when |
+|------|--------------|
+| [customization.md](customization.md) | Starting any deck: finding `deck_rules.md`, the intake questions, colour schemes, when and how to save a rule |
+| [academic/content_guidelines.md](academic/content_guidelines.md) | Planning any academic deck: argument, titles, exhibits, citations, timing |
+| [academic/slide_patterns.md](academic/slide_patterns.md) | Building academic slides with the kit |
+| [academic/paper_to_deck.md](academic/paper_to_deck.md) | The starting point is a paper |
+| [pitch/pitch_guidelines.md](pitch/pitch_guidelines.md) | Planning any pitch deck: sections, order, what investors look for, intake |
+| [pitch/slide_patterns.md](pitch/slide_patterns.md) | Building pitch slides with the kit |
+| `examples/build_academic_example.js`, `examples/build_pitch_example.js` | You want a complete working build script to adapt (content is invented) |
 
 ## Dependencies
 
-Same as PPTX skill:
-- `pip install "markitdown[pptx]"` — text extraction
-- `npm install -g pptxgenjs` — creating from scratch
-- LibreOffice (`soffice`) — PDF conversion
-- Poppler (`pdftoppm`) — PDF to images
+- Node with `pptxgenjs` (`npm install -g pptxgenjs`) for the kit
+- Python with `python-pptx` for the linter
+- `pdftotext` / `pdfimages` / `pdftoppm` (poppler) or `pypdf` for the paper extractor
+- LibreOffice (`soffice`) to render slides for the visual check
