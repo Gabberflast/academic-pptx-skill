@@ -8,6 +8,54 @@ This is a fork of [gabberflast/academic-pptx-skill](https://github.com/gabberfla
 The original taught Claude the rules of a good academic deck. This fork keeps those
 rules, adds a pitch mode, and adds scripts that build to the rules and check the result.
 
+## How it works
+
+Ask Claude for a deck and the skill takes it through seven steps. Two of them stop for
+you: the intake questions, and the outline.
+
+```mermaid
+flowchart TD
+    A["1. Pick the mode<br/>academic or pitch"] --> B["2. Load deck_rules.md,<br/>then ask the intake questions"]
+    B --> C["3. Get the facts<br/>paper extract or founder intake"]
+    C --> D["4. Ghost deck<br/>titles only, agreed with you"]
+    D --> E["5. Build<br/>deck_kit.js"]
+    E --> F["6. Lint, then look<br/>lint_deck.py + rendered slides"]
+    F -- "errors or layout problems" --> E
+    F -- "clean" --> G["7. Hand over<br/>.pptx, open items, updated deck_rules.md"]
+    B -. "saves lasting preferences" .-> R[("deck_rules.md")]
+    R -. "read by" .-> E
+    R -. "read by" .-> F
+```
+
+1. **Pick the mode.** Academic when the audience is evaluating research; pitch when it
+   is investors. The audience decides, not the presenter.
+2. **Load your rules, then intake.** Claude looks for `deck_rules.md` in the attachments
+   or your project folder and applies it without being asked. Then it asks, in one
+   round of at most four questions, whatever is still open: what to build from (a
+   paper, an old deck, data, notes, company material, or an interview), the colour
+   scheme, the slot (minutes and audience, or funding stage and format), and any house
+   rules. Lasting preferences are saved to `deck_rules.md`.
+3. **Get the facts.** For a paper, `extract_paper.py` pulls out sections, captions,
+   references and the sentences that carry numbers. For a pitch, Claude collects the
+   founder's facts: problem, traction, market, model, team, ask. Anything missing
+   becomes a `NEEDS` placeholder. Nothing is invented.
+4. **Ghost deck.** Every slide title is written as a full-sentence claim, in order,
+   before any slide exists. If the titles do not make the argument on their own, the
+   outline is fixed first. You approve it, unless the deck is short and the content is
+   clear.
+5. **Build.** `deck_kit.js` lays out each slide, applies your colours, numbers the
+   slides and attaches speaker notes. It warns when a title or body is too long and
+   never shrinks type to make content fit.
+6. **Lint, then look.** `lint_deck.py` opens the finished `.pptx` and reports problems
+   with a fix for each, applies your custom limits, banned words and required slides,
+   and prints your written house rules as a checklist. Errors are fixed before going
+   on. Then Claude renders the slides to images and checks each one for overlap,
+   clipped text and gaps. Any problem sends it back to step 5.
+7. **Hand over.** You get the `.pptx`, a short note on the claim the deck makes and
+   anything left open, and the updated `deck_rules.md` if it changed.
+
+The same steps are spelled out for Claude in [SKILL.md](SKILL.md).
+
 ## What the fork adds
 
 | | Original | This fork |
@@ -66,6 +114,9 @@ RESULT: FAIL — fix the errors and run again
 | Text overflowing its box or the slide | Numbers not found in the source paper (`--source`) | "No competitors"; buzzwords |
 | More than one exhibit; exhibit with no source line or call-out | "Thank you" slide | Valuation or cap on the ask slide |
 | Unfilled placeholders; missing notes and slide numbers | | More than 15 slides before the appendix |
+
+With a `deck_rules.md` it also flags your banned words, a missing required slide, a
+typeface other than yours, and more slides than your limit.
 
 It checks form, and prints the ghost deck so a reader can judge the argument. It works
 on any `.pptx`, most precisely on decks built with the kit.
@@ -152,8 +203,8 @@ python3 tests/run_tests.py
 ```
 
 Builds both example decks, lints them, builds deliberately bad decks and asserts which
-rules fire, runs the paper extractor on the fixture, and checks that a tampered number
-is caught.
+rules fire, runs the paper extractor on the fixture, checks that a tampered number is
+caught, and exercises the rules file (settings, scoping, locked checks, colour schemes).
 
 ## Background
 
